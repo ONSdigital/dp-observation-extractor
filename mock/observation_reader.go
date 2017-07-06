@@ -8,6 +8,7 @@ import (
 
 var _ observation.Reader = (*observationReader)(nil)
 
+// NewObservationReader provides a reader that returns the given observations and error on read.
 func NewObservationReader(observations []*model.Observation, error error) observation.Reader {
 	return &observationReader{
 		observations: observations,
