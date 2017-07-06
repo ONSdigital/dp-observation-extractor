@@ -12,7 +12,7 @@ func NewErrReader(err error) *ErrReader {
 	}
 }
 
-// Read returns the configured error
+// Read returns the configured error.
 func (reader *ErrReader) Read(p []byte) (n int, err error) {
 	return 0, reader.err
 }
