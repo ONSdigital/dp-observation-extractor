@@ -17,7 +17,7 @@ func TestEmptyInput(t *testing.T) {
 	Convey("Given a reader with no content", t, func() {
 
 		reader := strings.NewReader("")
-		observationReader := observation.NewReader(reader, false)
+		observationReader := observation.NewCSVReader(reader, false)
 
 		Convey("When read is called", func() {
 
@@ -35,7 +35,7 @@ func TestValidInput(t *testing.T) {
 	Convey("Given a reader with two rows of data", t, func() {
 
 		reader := strings.NewReader(exampleCsvLine + "\n" + exampleCsvLine)
-		observationReader := observation.NewReader(reader, false)
+		observationReader := observation.NewCSVReader(reader, false)
 
 		Convey("When read is called", func() {
 
@@ -69,7 +69,7 @@ func TestDiscardHeaderRow(t *testing.T) {
 	Convey("Given a reader that is configured to discard the header row", t, func() {
 
 		reader := strings.NewReader(exampleCsvLine + "\n" + exampleCsvLine)
-		observationReader := observation.NewReader(reader, true)
+		observationReader := observation.NewCSVReader(reader, true)
 
 		Convey("When read is called the second row is returned", func() {
 
@@ -98,7 +98,7 @@ func TestErrorResponse(t *testing.T) {
 	Convey("Given a reader that returns an error that is not EOF", t, func() {
 
 		expectedError := errors.New("The world has ended")
-		observationReader := observation.NewReader(observationtest.NewErrReader(expectedError), false)
+		observationReader := observation.NewCSVReader(observationtest.NewIOReader(expectedError), false)
 
 		Convey("When read is called", func() {
 

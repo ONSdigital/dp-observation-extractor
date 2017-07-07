@@ -2,12 +2,12 @@ package message_test
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/message"
-	"github.com/ONSdigital/dp-observation-extractor/model"
 	"github.com/ONSdigital/go-ns/avro"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"github.com/ONSdigital/dp-observation-extractor/message/messagetest"
 	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
+	"github.com/ONSdigital/dp-observation-extractor/request"
 )
 
 func TestConsumeMessages_UnmarshallError(t *testing.T) {
@@ -17,7 +17,7 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 		messageConsumer := messagetest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
-		expectedRequest := model.Request{
+		expectedRequest := request.Request{
 			InstanceID: "1234",
 			FileURL:    "s3://some-file",
 		}
@@ -52,7 +52,7 @@ func TestConsumeMessages(t *testing.T) {
 		messageConsumer := messagetest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
-		expectedRequest := model.Request{
+		expectedRequest := request.Request{
 			InstanceID: "1234",
 			FileURL:    "s3://some-file",
 		}
@@ -82,7 +82,7 @@ func TestToRequest(t *testing.T) {
 
 	Convey("Given a request message encoded using avro", t, func() {
 
-		expectedRequest := model.Request{
+		expectedRequest := request.Request{
 			InstanceID: "1234",
 			FileURL:    "s3://some-file",
 		}
@@ -104,7 +104,7 @@ func TestToRequest(t *testing.T) {
 }
 
 // Helper method to marshal a request into a []byte
-func toBytes(request model.Request) ([]byte, error) {
+func toBytes(request request.Request) ([]byte, error) {
 	marshalSchema := &avro.Schema{
 		Definition: message.RequestSchema,
 	}

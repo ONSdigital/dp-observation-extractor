@@ -1,7 +1,6 @@
 package message
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/model"
 	"github.com/ONSdigital/dp-observation-extractor/request"
 	"github.com/ONSdigital/go-ns/avro"
 	"github.com/ONSdigital/go-ns/log"
@@ -32,12 +31,12 @@ func ConsumeMessages(consumer Consumer, handler request.Handler) {
 }
 
 // ToRequest converts the given []byte to a Request instance.
-func ToRequest(message []byte) (*model.Request, error) {
+func ToRequest(message []byte) (*request.Request, error) {
 	marshalSchema := &avro.Schema{
 		Definition: RequestSchema,
 	}
 
-	var request model.Request
-	err := marshalSchema.Unmarshal(message, &request)
-	return &request, err
+	var req request.Request
+	err := marshalSchema.Unmarshal(message, &req)
+	return &req, err
 }

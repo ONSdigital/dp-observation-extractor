@@ -1,29 +1,28 @@
 package observationtest
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/model"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"io"
 )
 
-var _ observation.Reader = (*observationReader)(nil)
+// Reader is a reader that returns the given observations and error on read.
+type Reader struct {
+	offset       int
+	observations []*observation.Observation
+	error
+}
 
-// NewObservationReader provides a reader that returns the given observations and error on read.
-func NewObservationReader(observations []*model.Observation, error error) observation.Reader {
-	return &observationReader{
+// NewReader provides a reader that returns the given observations and error on read.
+func NewReader(observations []*observation.Observation, error error) *Reader {
+	return &Reader{
 		observations: observations,
 		offset:       0,
 		error:        error,
 	}
 }
 
-type observationReader struct {
-	offset       int
-	observations []*model.Observation
-	error
-}
-
-func (reader *observationReader) Read() (*model.Observation, error) {
+// Read an observation from the mocked observations.
+func (reader *Reader) Read() (*observation.Observation, error) {
 	if reader.offset == len(reader.observations) {
 		return nil, io.EOF
 	}
