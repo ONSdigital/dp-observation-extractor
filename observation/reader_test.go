@@ -17,7 +17,7 @@ func TestEmptyInput(t *testing.T) {
 	Convey("Given a reader with no content", t, func() {
 
 		reader := strings.NewReader("")
-		observationReader := observation.NewReader(reader)
+		observationReader := observation.NewReader(reader, false)
 
 		Convey("When read is called", func() {
 
@@ -98,7 +98,7 @@ func TestErrorResponse(t *testing.T) {
 	Convey("Given a reader that returns an error that is not EOF", t, func() {
 
 		expectedError := errors.New("The world has ended")
-		observationReader := observation.NewReader(mock.NewErrReader(expectedError))
+		observationReader := observation.NewReader(mock.NewErrReader(expectedError), false)
 
 		Convey("When read is called", func() {
 

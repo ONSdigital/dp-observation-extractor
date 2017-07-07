@@ -19,6 +19,10 @@ func NewReader(ioreader io.Reader, discardHeaderRow bool) Reader {
 
 	scanner := bufio.NewScanner(ioreader)
 
+	if discardHeaderRow {
+		scanner.Scan()
+	}
+
 	return &reader{
 		scanner: scanner,
 	}
