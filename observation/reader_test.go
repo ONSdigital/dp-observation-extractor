@@ -1,13 +1,13 @@
 package observation_test
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/mock"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"strings"
 	"testing"
+	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 )
 
 var exampleCsvLine string = "153223,,Person,,Count,,,,,,,,,,K04000001,,,,,,,,,,,,,,,,,,,,,Sex,Sex,,All categories: Sex,All categories: Sex,,,,Age,Age,,All categories: Age 16 and over,All categories: Age 16 and over,,,,Residence Type,Residence Type,,All categories: Residence Type,All categories: Residence Type,,,"
@@ -98,7 +98,7 @@ func TestErrorResponse(t *testing.T) {
 	Convey("Given a reader that returns an error that is not EOF", t, func() {
 
 		expectedError := errors.New("The world has ended")
-		observationReader := observation.NewReader(mock.NewErrReader(expectedError), false)
+		observationReader := observation.NewReader(observationtest.NewErrReader(expectedError), false)
 
 		Convey("When read is called", func() {
 

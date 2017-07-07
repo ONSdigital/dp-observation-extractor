@@ -2,12 +2,12 @@ package message_test
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/message"
-	"github.com/ONSdigital/dp-observation-extractor/mock"
 	"github.com/ONSdigital/dp-observation-extractor/model"
 	"github.com/ONSdigital/go-ns/avro"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"github.com/ONSdigital/dp-observation-extractor/message/messagetest"
+	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
 )
 
 func TestConsumeMessages_UnmarshallError(t *testing.T) {
@@ -15,7 +15,7 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 
 		messages := make(chan []byte, 2)
 		messageConsumer := messagetest.NewMessageConsumer(messages)
-		requestHandler := mock.NewRequestHandler()
+		requestHandler := requesttest.NewRequestHandler()
 
 		expectedRequest := model.Request{
 			InstanceID: "1234",
@@ -50,7 +50,7 @@ func TestConsumeMessages(t *testing.T) {
 
 		messages := make(chan []byte, 1)
 		messageConsumer := messagetest.NewMessageConsumer(messages)
-		requestHandler := mock.NewRequestHandler()
+		requestHandler := requesttest.NewRequestHandler()
 
 		expectedRequest := model.Request{
 			InstanceID: "1234",

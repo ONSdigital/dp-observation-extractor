@@ -1,4 +1,4 @@
-package mock
+package requesttest
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/model"
