@@ -7,13 +7,14 @@ import (
 	"github.com/ONSdigital/go-ns/avro"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+	"github.com/ONSdigital/dp-observation-extractor/message/messagetest"
 )
 
 func TestConsumeMessages_UnmarshallError(t *testing.T) {
 	Convey("Given a message consumer with an invalid message and a valid message", t, func() {
 
 		messages := make(chan []byte, 2)
-		messageConsumer := mock.NewMessageConsumer(messages)
+		messageConsumer := messagetest.NewMessageConsumer(messages)
 		requestHandler := mock.NewRequestHandler()
 
 		expectedRequest := model.Request{
@@ -48,7 +49,7 @@ func TestConsumeMessages(t *testing.T) {
 	Convey("Given a message consumer with a valid message", t, func() {
 
 		messages := make(chan []byte, 1)
-		messageConsumer := mock.NewMessageConsumer(messages)
+		messageConsumer := messagetest.NewMessageConsumer(messages)
 		requestHandler := mock.NewRequestHandler()
 
 		expectedRequest := model.Request{

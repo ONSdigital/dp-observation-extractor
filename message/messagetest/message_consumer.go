@@ -1,4 +1,4 @@
-package mock
+package messagetest
 
 import "github.com/ONSdigital/dp-observation-extractor/message"
 
