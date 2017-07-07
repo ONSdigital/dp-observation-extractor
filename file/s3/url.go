@@ -8,11 +8,11 @@ import (
 // URL represents a fully qualified S3 URL.
 type URL interface {
 	BucketName() string
-	FilePath() string
+	Path() string
 }
 
-// NewURL creates a new instance of URL.
-func NewURL(rawURL string) (URL, error) {
+// NewS3URL creates a new instance of URL.
+func NewS3URL(rawURL string) (URL, error) {
 
 	url, err := url.Parse(rawURL)
 	if err != nil {
@@ -32,6 +32,6 @@ func (url *s3URL) BucketName() string {
 	return url.Host
 }
 
-func (url *s3URL) FilePath() string {
-	return strings.TrimPrefix(url.Path, "/")
+func (url *s3URL) Path() string {
+	return strings.TrimPrefix(url.URL.Path, "/")
 }
