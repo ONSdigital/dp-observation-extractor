@@ -1,5 +1,9 @@
 package mock
 
+import "io"
+
+var _ io.Reader = (*ErrReader)(nil)
+
 // ErrReader provides a mock reader that returns the provided error when calling read.
 type ErrReader struct {
 	err error
