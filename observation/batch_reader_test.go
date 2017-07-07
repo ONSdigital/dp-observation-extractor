@@ -1,12 +1,12 @@
 package observation_test
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/mock"
 	"github.com/ONSdigital/dp-observation-extractor/model"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"testing"
+	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 )
 
 func TestBatchReader_Read(t *testing.T) {
@@ -16,7 +16,7 @@ func TestBatchReader_Read(t *testing.T) {
 		expectedObservations := make([]*model.Observation, 1)
 		expectedObservations[0] = &model.Observation{Row: "the,row,content"}
 
-		mockObservationReader := mock.NewObservationReader(expectedObservations, nil)
+		mockObservationReader := observationtest.NewObservationReader(expectedObservations, nil)
 		batchReader := observation.NewBatchReader(mockObservationReader)
 
 		Convey("When a batch is read that hits EOF", func() {
@@ -44,7 +44,7 @@ func TestBatchReader_Read_MultipleBatches(t *testing.T) {
 		expectedObservations[1] = &model.Observation{Row: "2,row,content"}
 		expectedObservations[2] = &model.Observation{Row: "3,row,content"}
 
-		mockObservationReader := mock.NewObservationReader(expectedObservations, nil)
+		mockObservationReader := observationtest.NewObservationReader(expectedObservations, nil)
 		batchReader := observation.NewBatchReader(mockObservationReader)
 
 		Convey("When multiple batches are read using a batch size of two", func() {
@@ -80,7 +80,7 @@ func TestBatchReader_Read_EOF(t *testing.T) {
 
 	Convey("Given a batch reader with no observation", t, func() {
 
-		mockObservationReader := mock.NewObservationReader(make([]*model.Observation, 0), nil)
+		mockObservationReader := observationtest.NewObservationReader(make([]*model.Observation, 0), nil)
 		batchReader := observation.NewBatchReader(mockObservationReader)
 
 		Convey("When a batch is read", func() {
