@@ -15,7 +15,7 @@ type Reader interface {
 var _ Reader = (*reader)(nil)
 
 // NewReader returns a new Reader instance for the given io.Reader
-func NewReader(ioreader io.Reader) Reader {
+func NewReader(ioreader io.Reader, discardHeaderRow bool) Reader {
 
 	scanner := bufio.NewScanner(ioreader)
 

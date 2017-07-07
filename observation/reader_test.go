@@ -35,7 +35,7 @@ func TestValidInput(t *testing.T) {
 	Convey("Given a reader with two rows of data", t, func() {
 
 		reader := strings.NewReader(exampleCsvLine + "\n" + exampleCsvLine)
-		observationReader := observation.NewReader(reader)
+		observationReader := observation.NewReader(reader, false)
 
 		Convey("When read is called", func() {
 
@@ -59,6 +59,35 @@ func TestValidInput(t *testing.T) {
 				So(observation2.Row, ShouldEqual, exampleCsvLine)
 
 				So(observation3, ShouldBeNil)
+			})
+		})
+	})
+}
+
+func TestDiscardHeaderRow(t *testing.T) {
+
+	Convey("Given a reader that is configured to discard the header row", t, func() {
+
+		reader := strings.NewReader(exampleCsvLine + "\n" + exampleCsvLine)
+		observationReader := observation.NewReader(reader, true)
+
+		Convey("When read is called the second row is returned", func() {
+
+			observation1, err1 := observationReader.Read()
+			observation2, err2 := observationReader.Read() // EOF expected
+
+			Convey("There are no errors returned until EOF is reached", func() {
+
+				So(err1, ShouldBeNil)
+				So(err2, ShouldEqual, io.EOF)
+			})
+
+			Convey("The two observation instances are populated as expected", func() {
+
+				So(observation1, ShouldNotBeNil)
+				So(observation1.Row, ShouldEqual, exampleCsvLine)
+
+				So(observation2, ShouldBeNil)
 			})
 		})
 	})
