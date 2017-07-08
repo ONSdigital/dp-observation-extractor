@@ -19,10 +19,11 @@ func NewRequestHandler() *RequestHandler {
 // RequestHandler provides a mock implementation that captures requests to check.
 type RequestHandler struct {
 	Requests []request.Request
+	Error    error
 }
 
 // Handle captures the given request and stores it for later assertions
 func (handler *RequestHandler) Handle(request *request.Request) error {
 	handler.Requests = append(handler.Requests, *request)
-	return nil
+	return handler.Error
 }

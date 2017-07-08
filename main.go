@@ -2,14 +2,14 @@ package main
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/config"
+	"github.com/ONSdigital/dp-observation-extractor/kafka"
+	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/dp-observation-extractor/request"
 	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/go-ns/s3"
 	"os"
 	"os/signal"
 	"syscall"
-	"github.com/ONSdigital/dp-observation-extractor/request"
-	"github.com/ONSdigital/go-ns/s3"
-	"github.com/ONSdigital/dp-observation-extractor/observation"
-	"github.com/ONSdigital/dp-observation-extractor/kafka"
 )
 
 func main() {
@@ -44,7 +44,6 @@ func main() {
 		log.Debug("Graceful shutdown of  was successful.", nil)
 		os.Exit(0)
 	}()
-
 
 	observationWriter := observation.NewMessageWriter(kafkaProducer)
 	requestHandler := request.NewCSVHandler(s3, observationWriter)

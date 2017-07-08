@@ -6,9 +6,9 @@ type MessageWriter struct {
 }
 
 // MessageProducer represents the dependency that writes messages
-type MessageProducer interface{
-	Output()   chan []byte
-	Closer()   chan bool
+type MessageProducer interface {
+	Output() chan []byte
+	Closer() chan bool
 }
 
 // NewMessageWriter returns a new message writer that writes messages to the given message producer.
@@ -22,4 +22,3 @@ func NewMessageWriter(messageProducer MessageProducer) *MessageWriter {
 func (messageWriter MessageWriter) WriteAll(reader Reader) error {
 	return nil
 }
-

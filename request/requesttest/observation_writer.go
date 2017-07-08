@@ -5,16 +5,16 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/request"
 )
 
-var _ request.ObservationWriter = (*MessageWriter)(nil)
+var _ request.ObservationWriter = (*ObservationWriter)(nil)
 
-// MessageWriter when used will capture the reader passed to it for assertions. Will return the configured error.
-type MessageWriter struct {
+// ObservationWriter when used will capture the reader passed to it for assertions. Will return the configured error.
+type ObservationWriter struct {
 	Reader observation.Reader
 	Error  error
 }
 
 // WriteAll will capture the reader passed to it for assertions.
-func (messageWriter *MessageWriter) WriteAll(reader observation.Reader) error {
-	messageWriter.Reader = reader
-	return messageWriter.Error
+func (observationWriter *ObservationWriter) WriteAll(reader observation.Reader) error {
+	observationWriter.Reader = reader
+	return observationWriter.Error
 }

@@ -8,7 +8,7 @@ import (
 
 // CSVHandler handles requests to extract observations from CSV files.
 type CSVHandler struct {
-	fileGetter     FileGetter
+	fileGetter        FileGetter
 	observationWriter ObservationWriter
 }
 
@@ -16,7 +16,7 @@ type CSVHandler struct {
 func NewCSVHandler(fileGetter FileGetter, observationWriter ObservationWriter) *CSVHandler {
 	return &CSVHandler{
 		observationWriter: observationWriter,
-		fileGetter:     fileGetter,
+		fileGetter:        fileGetter,
 	}
 }
 
@@ -39,12 +39,12 @@ func (handler CSVHandler) Handle(request *Request) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
+	defer func(readCloser io.ReadCloser) {
 		closeErr := readCloser.Close()
 		if closeErr != nil {
 			log.Error(closeErr, nil)
 		}
-	}()
+	}(readCloser)
 
 	discardHeaderRow := true
 	observationReader := observation.NewCSVReader(readCloser, discardHeaderRow)

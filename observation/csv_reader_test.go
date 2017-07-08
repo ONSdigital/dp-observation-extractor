@@ -2,12 +2,12 @@ package observation_test
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 	"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"strings"
 	"testing"
-	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 )
 
 var exampleCsvLine string = "153223,,Person,,Count,,,,,,,,,,K04000001,,,,,,,,,,,,,,,,,,,,,Sex,Sex,,All categories: Sex,All categories: Sex,,,,Age,Age,,All categories: Age 16 and over,All categories: Age 16 and over,,,,Residence Type,Residence Type,,All categories: Residence Type,All categories: Residence Type,,,"

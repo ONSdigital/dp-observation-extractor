@@ -2,10 +2,10 @@ package observation_test
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"testing"
-	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 )
 
 func TestBatchReader_Read(t *testing.T) {

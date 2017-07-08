@@ -1,8 +1,8 @@
 package observation
 
 import (
-	"io"
 	"bufio"
+	"io"
 )
 
 // CSVReader deserialises observations from an io.Reader containing CSV encoded observations.

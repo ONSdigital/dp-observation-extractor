@@ -2,11 +2,11 @@ package request_test
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/message"
+	"github.com/ONSdigital/dp-observation-extractor/request"
+	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
 	"github.com/ONSdigital/go-ns/avro"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
-	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
-	"github.com/ONSdigital/dp-observation-extractor/request"
 )
 
 func TestConsumeMessages_UnmarshallError(t *testing.T) {
@@ -16,16 +16,10 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 		messageConsumer := requesttest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
-		expectedRequest := request.Request{
-			InstanceID: "1234",
-			FileURL:    "s3://some-file",
-		}
-
-		bytes, err := toBytes(expectedRequest)
-		So(err, ShouldBeNil)
+		expectedRequest := getExampleRequest()
 
 		messages <- []byte("invalid message")
-		messages <- bytes
+		messages <- toBytes(*expectedRequest)
 		close(messages)
 
 		Convey("When consume messages is called", func() {
@@ -51,15 +45,9 @@ func TestConsumeMessages(t *testing.T) {
 		messageConsumer := requesttest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
-		expectedRequest := request.Request{
-			InstanceID: "1234",
-			FileURL:    "s3://some-file",
-		}
+		expectedRequest := getExampleRequest()
 
-		bytes, err := toBytes(expectedRequest)
-		So(err, ShouldBeNil)
-
-		messages <- bytes
+		messages <- toBytes(*expectedRequest)
 		close(messages)
 
 		Convey("When consume messages is called", func() {
@@ -81,13 +69,8 @@ func TestToRequest(t *testing.T) {
 
 	Convey("Given a request message encoded using avro", t, func() {
 
-		expectedRequest := request.Request{
-			InstanceID: "1234",
-			FileURL:    "s3://some-file",
-		}
-
-		bytes, err := toBytes(expectedRequest)
-		So(err, ShouldBeNil)
+		expectedRequest := getExampleRequest()
+		bytes := toBytes(*expectedRequest)
 
 		Convey("When the expectedRequest is unmarshalled", func() {
 
@@ -103,10 +86,19 @@ func TestToRequest(t *testing.T) {
 }
 
 // Helper method to marshal a request into a []byte
-func toBytes(request request.Request) ([]byte, error) {
+func toBytes(request request.Request) []byte {
 	marshalSchema := &avro.Schema{
 		Definition: message.RequestSchema,
 	}
 	bytes, err := marshalSchema.Marshal(request)
-	return bytes, err
+	So(err, ShouldBeNil)
+	return bytes
+}
+
+func getExampleRequest() *request.Request {
+	expectedRequest := &request.Request{
+		InstanceID: "1234",
+		FileURL:    "s3://some-file",
+	}
+	return expectedRequest
 }

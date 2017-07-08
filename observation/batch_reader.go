@@ -1,6 +1,5 @@
 package observation
 
-
 // BatchReader provides an interface to read Observations
 type BatchReader interface {
 	Read(batchSize int) ([]*Observation, error)

@@ -1,9 +1,9 @@
 package request
 
 import (
+	"github.com/ONSdigital/dp-observation-extractor/message"
 	"github.com/ONSdigital/go-ns/avro"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/ONSdigital/dp-observation-extractor/message"
 )
 
 // MessageConsumer provides a generic interface for consuming []byte messages
