@@ -5,10 +5,7 @@ import (
 	"bufio"
 )
 
-// ensure Reader satisfies the observation.Reader interface
-var _ Reader = (*CSVReader)(nil)
-
-// CSVReader deserialises observations from an io.CSVReader.
+// CSVReader deserialises observations from an io.Reader containing CSV encoded observations.
 type CSVReader struct {
 	scanner *bufio.Scanner
 }

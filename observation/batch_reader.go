@@ -6,18 +6,15 @@ type BatchReader interface {
 	Read(batchSize int) ([]*Observation, error)
 }
 
-// ensure CSVReader satisfies the CSVReader interface
-var _ BatchReader = (*batchReader)(nil)
-
 // BatchReader reads the specified number of observation
 type batchReader struct {
-	reader Reader
+	observationReader Reader
 }
 
 // NewBatchReader returns a new BatchReader instance for the given CSVReader
 func NewBatchReader(observationReader Reader) BatchReader {
 	return &batchReader{
-		reader: observationReader,
+		observationReader: observationReader,
 	}
 }
 
@@ -28,7 +25,7 @@ func (batchReader *batchReader) Read(batchSize int) ([]*Observation, error) {
 
 	for index := 0; index < batchSize; index++ {
 
-		observation, err := batchReader.reader.Read()
+		observation, err := batchReader.observationReader.Read()
 		if err != nil {
 			return batch, err
 		}

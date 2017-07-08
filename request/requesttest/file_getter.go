@@ -5,16 +5,16 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/request"
 )
 
-// Check that Provider implements the file.Provider interface.
-var _ request.FileGetter = (*Provider)(nil)
+// Check that Getter implements the file.Getter interface.
+var _ request.FileGetter = (*Getter)(nil)
 
-// Provider is a mock file provider that returns the stored io.ReadCloser and error on Get().
-type Provider struct {
+// Getter is a mock file getter that returns the stored io.ReadCloser and error on Get().
+type Getter struct {
 	Reader io.ReadCloser
 	Error  error
 }
 
 // Get the configured io.ReadCloser and error.
-func (provider *Provider) Get(url string) (io.ReadCloser, error) {
-	return provider.Reader, provider.Error
+func (getter *Getter) Get(url string) (io.ReadCloser, error) {
+	return getter.Reader, getter.Error
 }

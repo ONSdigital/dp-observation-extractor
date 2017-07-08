@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+var _ observation.Reader = (*Reader)(nil)
+
 // Reader is a reader that returns the given observations and error on read.
 type Reader struct {
 	offset       int

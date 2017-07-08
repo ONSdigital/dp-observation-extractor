@@ -1,11 +1,10 @@
-package message_test
+package request_test
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/message"
 	"github.com/ONSdigital/go-ns/avro"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
-	"github.com/ONSdigital/dp-observation-extractor/message/messagetest"
 	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
 	"github.com/ONSdigital/dp-observation-extractor/request"
 )
@@ -14,7 +13,7 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 	Convey("Given a message consumer with an invalid message and a valid message", t, func() {
 
 		messages := make(chan []byte, 2)
-		messageConsumer := messagetest.NewMessageConsumer(messages)
+		messageConsumer := requesttest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
 		expectedRequest := request.Request{
@@ -31,7 +30,7 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 
 		Convey("When consume messages is called", func() {
 
-			message.ConsumeMessages(messageConsumer, requestHandler)
+			request.Consume(messageConsumer, requestHandler)
 
 			Convey("Only the valid request is sent to the handler ", func() {
 				So(len(requestHandler.Requests), ShouldEqual, 1)
@@ -49,7 +48,7 @@ func TestConsumeMessages(t *testing.T) {
 	Convey("Given a message consumer with a valid message", t, func() {
 
 		messages := make(chan []byte, 1)
-		messageConsumer := messagetest.NewMessageConsumer(messages)
+		messageConsumer := requesttest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
 		expectedRequest := request.Request{
@@ -65,7 +64,7 @@ func TestConsumeMessages(t *testing.T) {
 
 		Convey("When consume messages is called", func() {
 
-			message.ConsumeMessages(messageConsumer, requestHandler)
+			request.Consume(messageConsumer, requestHandler)
 
 			Convey("A request is sent to the handler ", func() {
 				So(len(requestHandler.Requests), ShouldEqual, 1)
@@ -92,7 +91,7 @@ func TestToRequest(t *testing.T) {
 
 		Convey("When the expectedRequest is unmarshalled", func() {
 
-			request, err := message.ToRequest(bytes)
+			request, err := request.Unmarshal(bytes)
 
 			Convey("The expectedRequest has the expected values", func() {
 				So(err, ShouldBeNil)
