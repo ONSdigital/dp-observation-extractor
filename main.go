@@ -19,7 +19,7 @@ func main() {
 		log.Error(err, nil)
 		os.Exit(1)
 	}
-	log.Debug("Loaded config", log.Data{"config": config})
+	log.Debug("loaded config", log.Data{"config": config})
 
 	s3, err := s3.New(config.AWSRegion)
 	if err != nil {
@@ -31,7 +31,7 @@ func main() {
 
 	kafkaConsumer, err := kafka.NewConsumerGroup(config.FileConsumerTopic, config.FileConsumerGroup)
 	if err != nil {
-		log.Error(err, log.Data{"message": "Failed to create Kafka consumer"})
+		log.Error(err, log.Data{"message": "failed to create kafka consumer"})
 		os.Exit(1)
 	}
 
@@ -47,7 +47,7 @@ func main() {
 		kafkaConsumer.Closer() <- true
 		kafkaProducer.Closer() <- true
 
-		log.Debug("Graceful shutdown of  was successful.", nil)
+		log.Debug("graceful shutdown was successful", nil)
 		os.Exit(0)
 	}()
 

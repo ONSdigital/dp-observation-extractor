@@ -23,21 +23,21 @@ func Consume(messageConsumer MessageConsumer, handler Handler) {
 
 		request, err := Unmarshal(message)
 		if err != nil {
-			log.Error(err, log.Data{"schema": "Failed to unmarshal request"})
+			log.Error(err, log.Data{"schema": "failed to unmarshal request"})
 			continue
 		}
 
-		log.Debug("Request received", log.Data{"request": request})
+		log.Debug("request received", log.Data{"request": request})
 
 		err = handler.Handle(request)
 		if err != nil {
-			log.Error(err, log.Data{"schema": "Failed to handle request"})
+			log.Error(err, log.Data{"schema": "failed to handle request"})
 			continue
 		}
 
-		log.Debug("Request processed - Committing message", log.Data{"request": request})
+		log.Debug("request processed - committing message", log.Data{"request": request})
 		message.Commit()
-		log.Debug("Message committed", log.Data{"request": request})
+		log.Debug("message committed", log.Data{"request": request})
 	}
 }
 
