@@ -1,16 +1,15 @@
 package request_test
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/message"
 	"github.com/ONSdigital/dp-observation-extractor/request"
 	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
-	"github.com/ONSdigital/go-ns/avro"
+	"github.com/ONSdigital/dp-observation-extractor/schema"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
 
 func TestConsumeMessages_UnmarshallError(t *testing.T) {
-	Convey("Given a message consumer with an invalid message and a valid message", t, func() {
+	Convey("Given a schema consumer with an invalid schema and a valid schema", t, func() {
 
 		messages := make(chan []byte, 2)
 		messageConsumer := requesttest.NewMessageConsumer(messages)
@@ -18,8 +17,8 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 
 		expectedRequest := getExampleRequest()
 
-		messages <- []byte("invalid message")
-		messages <- toBytes(*expectedRequest)
+		messages <- []byte("invalid schema")
+		messages <- Marshal(*expectedRequest)
 		close(messages)
 
 		Convey("When consume messages is called", func() {
@@ -39,7 +38,7 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 
 func TestConsumeMessages(t *testing.T) {
 
-	Convey("Given a message consumer with a valid message", t, func() {
+	Convey("Given a schema consumer with a valid schema", t, func() {
 
 		messages := make(chan []byte, 1)
 		messageConsumer := requesttest.NewMessageConsumer(messages)
@@ -47,7 +46,7 @@ func TestConsumeMessages(t *testing.T) {
 
 		expectedRequest := getExampleRequest()
 
-		messages <- toBytes(*expectedRequest)
+		messages <- Marshal(*expectedRequest)
 		close(messages)
 
 		Convey("When consume messages is called", func() {
@@ -67,10 +66,10 @@ func TestConsumeMessages(t *testing.T) {
 
 func TestToRequest(t *testing.T) {
 
-	Convey("Given a request message encoded using avro", t, func() {
+	Convey("Given a request schema encoded using avro", t, func() {
 
 		expectedRequest := getExampleRequest()
-		bytes := toBytes(*expectedRequest)
+		bytes := Marshal(*expectedRequest)
 
 		Convey("When the expectedRequest is unmarshalled", func() {
 
@@ -85,12 +84,9 @@ func TestToRequest(t *testing.T) {
 	})
 }
 
-// Helper method to marshal a request into a []byte
-func toBytes(request request.Request) []byte {
-	marshalSchema := &avro.Schema{
-		Definition: message.RequestSchema,
-	}
-	bytes, err := marshalSchema.Marshal(request)
+// Marshal helper method to marshal a request into a []byte
+func Marshal(request request.Request) []byte {
+	bytes, err := schema.Request.Marshal(request)
 	So(err, ShouldBeNil)
 	return bytes
 }

@@ -1,8 +1,7 @@
 package request
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/message"
-	"github.com/ONSdigital/go-ns/avro"
+	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/go-ns/log"
 )
 
@@ -23,25 +22,21 @@ func Consume(messageConsumer MessageConsumer, handler Handler) {
 
 		request, err := Unmarshal(message)
 		if err != nil {
-			log.Error(err, log.Data{"message": "Failed to unmarshal request"})
+			log.Error(err, log.Data{"schema": "Failed to unmarshal request"})
 			continue
 		}
 
 		err = handler.Handle(request)
 		if err != nil {
-			log.Error(err, log.Data{"message": "Failed to handle request"})
+			log.Error(err, log.Data{"schema": "Failed to handle request"})
 			continue
 		}
 	}
 }
 
-// Unmarshal converts the given []byte to a Request instance.
+// Unmarshal converts a request instance to []byte.
 func Unmarshal(input []byte) (*Request, error) {
-	marshalSchema := &avro.Schema{
-		Definition: message.RequestSchema,
-	}
-
 	var request Request
-	err := marshalSchema.Unmarshal(input, &request)
+	err := schema.Request.Unmarshal(input, &request)
 	return &request, err
 }
