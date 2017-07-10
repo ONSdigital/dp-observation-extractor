@@ -11,13 +11,12 @@ type CSVReader struct {
 }
 
 // NewCSVReader returns a new CSVReader instance for the given io.CSVReader
-func NewCSVReader(ioreader io.Reader, discardHeaderRow bool) *CSVReader {
+func NewCSVReader(ioreader io.Reader) *CSVReader {
 
 	scanner := bufio.NewScanner(ioreader)
 
-	if discardHeaderRow {
-		scanner.Scan()
-	}
+	// Discard the header row.
+	scanner.Scan()
 
 	return &CSVReader{
 		scanner: scanner,

@@ -29,8 +29,7 @@ func TestMessageWriter_WriteAll(t *testing.T) {
 
 		Convey("When write all is called on the observation schema writer", func() {
 
-			err := observationMessageWriter.WriteAll(mockObservationReader, expectedInstanceID)
-			So(err, ShouldBeNil)
+			observationMessageWriter.WriteAll(mockObservationReader, expectedInstanceID)
 
 			Convey("The schema producer has the observation on its output channel", func() {
 

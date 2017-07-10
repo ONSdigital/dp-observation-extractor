@@ -10,6 +10,7 @@ import (
 	"testing"
 )
 
+var exampleCsvHeader string = "observation,some,other,headers"
 var exampleCsvLine string = "153223,,Person,,Count,,,,,,,,,,K04000001,,,,,,,,,,,,,,,,,,,,,Sex,Sex,,All categories: Sex,All categories: Sex,,,,Age,Age,,All categories: Age 16 and over,All categories: Age 16 and over,,,,Residence Type,Residence Type,,All categories: Residence Type,All categories: Residence Type,,,"
 
 func TestEmptyInput(t *testing.T) {
@@ -17,7 +18,7 @@ func TestEmptyInput(t *testing.T) {
 	Convey("Given a reader with no content", t, func() {
 
 		reader := strings.NewReader("")
-		observationReader := observation.NewCSVReader(reader, false)
+		observationReader := observation.NewCSVReader(reader)
 
 		Convey("When read is called", func() {
 
@@ -34,8 +35,8 @@ func TestValidInput(t *testing.T) {
 
 	Convey("Given a reader with two rows of data", t, func() {
 
-		reader := strings.NewReader(exampleCsvLine + "\n" + exampleCsvLine)
-		observationReader := observation.NewCSVReader(reader, false)
+		reader := strings.NewReader(exampleCsvHeader + "\n" + exampleCsvLine + "\n" + exampleCsvLine)
+		observationReader := observation.NewCSVReader(reader)
 
 		Convey("When read is called", func() {
 
@@ -66,10 +67,10 @@ func TestValidInput(t *testing.T) {
 
 func TestDiscardHeaderRow(t *testing.T) {
 
-	Convey("Given a reader that is configured to discard the header row", t, func() {
+	Convey("Given some input with a header row and data row", t, func() {
 
-		reader := strings.NewReader(exampleCsvLine + "\n" + exampleCsvLine)
-		observationReader := observation.NewCSVReader(reader, true)
+		reader := strings.NewReader(exampleCsvHeader + "\n" + exampleCsvLine)
+		observationReader := observation.NewCSVReader(reader)
 
 		Convey("When read is called the second row is returned", func() {
 
@@ -98,7 +99,7 @@ func TestErrorResponse(t *testing.T) {
 	Convey("Given a reader that returns an error that is not EOF", t, func() {
 
 		expectedError := errors.New("The world has ended")
-		observationReader := observation.NewCSVReader(observationtest.NewIOReader(expectedError), false)
+		observationReader := observation.NewCSVReader(observationtest.NewIOReader(expectedError))
 
 		Convey("When read is called", func() {
 

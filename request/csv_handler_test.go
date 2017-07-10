@@ -1,7 +1,6 @@
 package request_test
 
 import (
-	"errors"
 	"github.com/ONSdigital/dp-observation-extractor/request"
 	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
 	. "github.com/smartystreets/goconvey/convey"
@@ -109,30 +108,6 @@ func TestCsvHandler(t *testing.T) {
 				observation2, err := observationWriterStub.Reader.Read()
 				So(observation2, ShouldBeNil)
 				So(err, ShouldEqual, io.EOF)
-			})
-		})
-	})
-}
-
-func TestCsvHandler_ObservationWriterError(t *testing.T) {
-
-	Convey("Given an example request", t, func() {
-
-		expectedError := errors.New("Error on writing observations")
-
-		exampleRequest := getExampleRequest()
-		stubReadCloser := &requesttest.ReadCloser{Reader: strings.NewReader(exampleHeader + "\n" + exampleCsvLine)}
-		fileGetterStub := &requesttest.FileGetter{Reader: stubReadCloser}
-		observationWriterStub := &requesttest.ObservationWriter{Error: expectedError}
-
-		requestHandler := request.NewCSVHandler(fileGetterStub, observationWriterStub)
-
-		Convey("When handle is called", func() {
-
-			err := requestHandler.Handle(exampleRequest)
-
-			Convey("The error returned from the observation writer is returned", func() {
-				So(err, ShouldEqual, expectedError)
 			})
 		})
 	})
