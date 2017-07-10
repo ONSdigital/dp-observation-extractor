@@ -52,7 +52,7 @@ func TestCsvHandler_FileGetterUrl(t *testing.T) {
 			_ = requestHandler.Handle(exampleRequest)
 
 			Convey("The file getter is called with the url from the request", func() {
-				So(fileGetterStub.Url, ShouldEqual, exampleRequest.FileURL)
+				So(fileGetterStub.URL, ShouldEqual, exampleRequest.FileURL)
 			})
 		})
 	})

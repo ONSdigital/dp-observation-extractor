@@ -4,7 +4,7 @@ import (
 	"github.com/ian-kent/gofigure"
 )
 
-// Config values for the application
+// Config values for the application.
 type Config struct {
 	BindAddr                 string `env:"BIND_ADDR" flag:"bind-addr" flagDesc:"The port to bind to"`
 	KafkaAddr                string `env:"KAFKA_ADDR" flag:"kafka-addr" flagDesc:"The address of the Kafka instance"`
@@ -14,7 +14,7 @@ type Config struct {
 	ObservationProducerTopic string `env:"OBSERVATION_PRODUCER_TOPIC" flag:"observation-producer-topic" flagDesc:"The Kafka topic to send the observation messages to"`
 }
 
-// Get the config values from the environment or provide the defaults.
+// Get the configuration values from the environment or provide the defaults.
 func Get() (*Config, error) {
 
 	cfg := Config{

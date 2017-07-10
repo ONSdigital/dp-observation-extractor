@@ -1,6 +1,7 @@
 package request_test
 
 import (
+	"github.com/ONSdigital/dp-observation-extractor/kafka"
 	"github.com/ONSdigital/dp-observation-extractor/request"
 	"github.com/ONSdigital/dp-observation-extractor/request/requesttest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
@@ -11,14 +12,14 @@ import (
 func TestConsumeMessages_UnmarshallError(t *testing.T) {
 	Convey("Given a schema consumer with an invalid schema and a valid schema", t, func() {
 
-		messages := make(chan []byte, 2)
+		messages := make(chan kafka.Message, 2)
 		messageConsumer := requesttest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
 		expectedRequest := getExampleRequest()
 
-		messages <- []byte("invalid schema")
-		messages <- Marshal(*expectedRequest)
+		messages <- &requesttest.Message{Data: []byte("invalid schema")}
+		messages <- &requesttest.Message{Data: Marshal(*expectedRequest)}
 		close(messages)
 
 		Convey("When consume messages is called", func() {
@@ -40,13 +41,15 @@ func TestConsumeMessages(t *testing.T) {
 
 	Convey("Given a schema consumer with a valid schema", t, func() {
 
-		messages := make(chan []byte, 1)
+		messages := make(chan kafka.Message, 1)
 		messageConsumer := requesttest.NewMessageConsumer(messages)
 		requestHandler := requesttest.NewRequestHandler()
 
 		expectedRequest := getExampleRequest()
 
-		messages <- Marshal(*expectedRequest)
+		message := &requesttest.Message{Data: Marshal(*expectedRequest)}
+
+		messages <- message
 		close(messages)
 
 		Convey("When consume messages is called", func() {
@@ -60,6 +63,10 @@ func TestConsumeMessages(t *testing.T) {
 				So(request.FileURL, ShouldEqual, expectedRequest.FileURL)
 				So(request.InstanceID, ShouldEqual, expectedRequest.InstanceID)
 			})
+
+			Convey("The message is committed", func() {
+				So(message.Committed(), ShouldEqual, true)
+			})
 		})
 	})
 }
@@ -69,11 +76,11 @@ func TestToRequest(t *testing.T) {
 	Convey("Given a request schema encoded using avro", t, func() {
 
 		expectedRequest := getExampleRequest()
-		bytes := Marshal(*expectedRequest)
+		message := &requesttest.Message{Data: Marshal(*expectedRequest)}
 
 		Convey("When the expectedRequest is unmarshalled", func() {
 
-			request, err := request.Unmarshal(bytes)
+			request, err := request.Unmarshal(message)
 
 			Convey("The expectedRequest has the expected values", func() {
 				So(err, ShouldBeNil)

@@ -1,13 +1,14 @@
 package requesttest
 
 import (
+	"github.com/ONSdigital/dp-observation-extractor/kafka"
 	"github.com/ONSdigital/dp-observation-extractor/request"
 )
 
 var _ request.MessageConsumer = (*MessageConsumer)(nil)
 
 // NewMessageConsumer creates a consumer using the given channel.
-func NewMessageConsumer(messages chan []byte) *MessageConsumer {
+func NewMessageConsumer(messages chan kafka.Message) *MessageConsumer {
 	return &MessageConsumer{
 		messages: messages,
 		closer:   nil,
@@ -16,12 +17,12 @@ func NewMessageConsumer(messages chan []byte) *MessageConsumer {
 
 // MessageConsumer is a mock that provides the stored schema channel.
 type MessageConsumer struct {
-	messages chan []byte
+	messages chan kafka.Message
 	closer   chan bool
 }
 
-// Messages returns the stored schema channel.
-func (consumer *MessageConsumer) Messages() chan []byte {
+// Incoming returns the stored schema channel.
+func (consumer *MessageConsumer) Incoming() chan kafka.Message {
 	return consumer.messages
 }
 

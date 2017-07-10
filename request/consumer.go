@@ -1,13 +1,14 @@
 package request
 
 import (
+	"github.com/ONSdigital/dp-observation-extractor/kafka"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/go-ns/log"
 )
 
 // MessageConsumer provides a generic interface for consuming []byte messages
 type MessageConsumer interface {
-	Messages() chan []byte
+	Incoming() chan kafka.Message
 	Closer() chan bool
 }
 
@@ -18,7 +19,7 @@ type Handler interface {
 
 // Consume convert them to request instances, and pass the request to the provided handler.
 func Consume(messageConsumer MessageConsumer, handler Handler) {
-	for message := range messageConsumer.Messages() {
+	for message := range messageConsumer.Incoming() {
 
 		request, err := Unmarshal(message)
 		if err != nil {
@@ -31,12 +32,14 @@ func Consume(messageConsumer MessageConsumer, handler Handler) {
 			log.Error(err, log.Data{"schema": "Failed to handle request"})
 			continue
 		}
+
+		message.Commit()
 	}
 }
 
 // Unmarshal converts a request instance to []byte.
-func Unmarshal(input []byte) (*Request, error) {
+func Unmarshal(message kafka.Message) (*Request, error) {
 	var request Request
-	err := schema.Request.Unmarshal(input, &request)
+	err := schema.Request.Unmarshal(message.GetData(), &request)
 	return &request, err
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/ONSdigital/go-ns/avro"
 )
 
-// Request the Avro schema for request messages.
 var request = `{
   "type": "record",
   "name": "dimensions-inserted",
@@ -15,11 +14,11 @@ var request = `{
   ]
 }`
 
+// Request the Avro schema for request messages.
 var Request *avro.Schema = &avro.Schema{
 	Definition: request,
 }
 
-// ObservationExtractedEvent the Avro schema for each observation extracted.
 var observationExtractedEvent = `{
   "type": "record",
   "name": "observation-extracted",
@@ -29,6 +28,7 @@ var observationExtractedEvent = `{
   ]
 }`
 
+// ObservationExtractedEvent is the Avro schema for each observation extracted.
 var ObservationExtractedEvent *avro.Schema = &avro.Schema{
 	Definition: observationExtractedEvent,
 }
