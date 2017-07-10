@@ -35,6 +35,7 @@ func (handler CSVHandler) Handle(request *Request) error {
 
 	url := request.FileURL
 
+	log.Debug("Getting file", log.Data{"url": url, "request": request})
 	readCloser, err := handler.fileGetter.Get(url)
 	if err != nil {
 		return err

@@ -27,13 +27,17 @@ func Consume(messageConsumer MessageConsumer, handler Handler) {
 			continue
 		}
 
+		log.Debug("Request received", log.Data{"request": request})
+
 		err = handler.Handle(request)
 		if err != nil {
 			log.Error(err, log.Data{"schema": "Failed to handle request"})
 			continue
 		}
 
+		log.Debug("Request processed - Committing message", log.Data{"request": request})
 		message.Commit()
+		log.Debug("Message committed", log.Data{"request": request})
 	}
 }
 

@@ -9,7 +9,8 @@ dp-observation-extractor
 * Clone the repo `go get github.com/ONSdigital/dp-csv-splitter`
 * Run the application `make debug`
 
-run kafka consumer / producer
+#### Running in isolation
+* run kafka consumer / producer apps 
 * run local S3 store?
 
 ### Configuration

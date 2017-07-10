@@ -47,6 +47,7 @@ func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) er
 		observation, readErr = reader.Read()
 	}
 
+	log.Debug("All observations extracted", log.Data{"instanceID": instanceID})
 	return nil
 }
 
