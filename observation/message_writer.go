@@ -24,7 +24,7 @@ func NewMessageWriter(messageProducer MessageProducer) *MessageWriter {
 }
 
 // WriteAll observations as messages from the given observation reader.
-func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) error {
+func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) {
 
 	observation, readErr := reader.Read()
 
@@ -48,7 +48,6 @@ func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) er
 	}
 
 	log.Debug("all observations extracted", log.Data{"instanceID": instanceID})
-	return nil
 }
 
 // Marshal converts the given observationExtractedEvent to a []byte.
