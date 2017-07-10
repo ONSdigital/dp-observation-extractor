@@ -36,11 +36,8 @@ func main() {
 	go func() {
 		<-signals
 
-		//if err := extractor.Close(); err != nil {
-		//	log.Debug("Failed to shutdown gracefully.", nil)
-		//	log.Error(err, nil)
-		//	os.Exit(1)
-		//}
+		// gracefully dispose resources
+
 		log.Debug("Graceful shutdown of  was successful.", nil)
 		os.Exit(0)
 	}()

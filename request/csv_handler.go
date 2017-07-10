@@ -27,7 +27,7 @@ type FileGetter interface {
 
 // ObservationWriter provides operations for observation output.
 type ObservationWriter interface {
-	WriteAll(observation.Reader) error
+	WriteAll(observationReader observation.Reader, instanceID string) error
 }
 
 // Handle takes a single request, and returns the observations gathered from the URL in the request.
@@ -49,6 +49,6 @@ func (handler CSVHandler) Handle(request *Request) error {
 	discardHeaderRow := true
 	observationReader := observation.NewCSVReader(readCloser, discardHeaderRow)
 
-	err = handler.observationWriter.WriteAll(observationReader)
+	err = handler.observationWriter.WriteAll(observationReader, request.InstanceID)
 	return err
 }

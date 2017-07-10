@@ -14,7 +14,7 @@ type ObservationWriter struct {
 }
 
 // WriteAll will capture the reader passed to it for assertions.
-func (observationWriter *ObservationWriter) WriteAll(reader observation.Reader) error {
+func (observationWriter *ObservationWriter) WriteAll(reader observation.Reader, instanceID string) error {
 	observationWriter.Reader = reader
 	return observationWriter.Error
 }
