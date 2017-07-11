@@ -1,3 +1,5 @@
+SHELL=bash
+
 BUILD=build
 BUILD_ARCH=$(BUILD)/$(GOOS)-$(GOARCH)
 BIN_DIR?=.
@@ -11,5 +13,5 @@ build:
 debug: build
 	HUMAN_LOG=1 go run cmd/dp-observation-extractor/main.go
 test:
-	go test -cover $(go list ./... | grep -v /vendor/)
+	go test -cover $(shell go list ./... | grep -v /vendor/)
 .PHONY: build debug test
