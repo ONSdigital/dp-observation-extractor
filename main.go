@@ -52,7 +52,7 @@ func main() {
 	}()
 
 	observationWriter := observation.NewMessageWriter(kafkaProducer)
-	requestHandler := event.NewCSVHandler(s3, observationWriter)
+	eventHandler := event.NewCSVHandler(s3, observationWriter)
 
-	event.Consume(kafkaConsumer, requestHandler)
+	event.Consume(kafkaConsumer, eventHandler)
 }
