@@ -1,4 +1,4 @@
-package request
+package event
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/observation"
@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// CSVHandler handles requests to extract observations from CSV files.
+// CSVHandler handles events to extract observations from CSV files.
 type CSVHandler struct {
 	fileGetter        FileGetter
 	observationWriter ObservationWriter
@@ -30,12 +30,12 @@ type ObservationWriter interface {
 	WriteAll(observationReader observation.Reader, instanceID string)
 }
 
-// Handle takes a single request, and returns the observations gathered from the URL in the request.
-func (handler CSVHandler) Handle(request *Request) error {
+// Handle takes a single event, and returns the observations gathered from the URL in the event.
+func (handler CSVHandler) Handle(event *Event) error {
 
-	url := request.FileURL
+	url := event.FileURL
 
-	log.Debug("getting file", log.Data{"url": url, "request": request})
+	log.Debug("getting file", log.Data{"url": url, "event": event})
 	readCloser, err := handler.fileGetter.Get(url)
 	if err != nil {
 		return err
@@ -49,6 +49,6 @@ func (handler CSVHandler) Handle(request *Request) error {
 
 	observationReader := observation.NewCSVReader(readCloser)
 
-	handler.observationWriter.WriteAll(observationReader, request.InstanceID)
+	handler.observationWriter.WriteAll(observationReader, event.InstanceID)
 	return nil
 }

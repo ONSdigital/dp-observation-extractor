@@ -4,7 +4,7 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/kafka"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
-	"github.com/ONSdigital/dp-observation-extractor/request"
+	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/s3"
 	"os"
@@ -52,7 +52,7 @@ func main() {
 	}()
 
 	observationWriter := observation.NewMessageWriter(kafkaProducer)
-	requestHandler := request.NewCSVHandler(s3, observationWriter)
+	requestHandler := event.NewCSVHandler(s3, observationWriter)
 
-	request.Consume(kafkaConsumer, requestHandler)
+	event.Consume(kafkaConsumer, requestHandler)
 }

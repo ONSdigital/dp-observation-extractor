@@ -1,11 +1,11 @@
-package requesttest
+package eventtest
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/observation"
-	"github.com/ONSdigital/dp-observation-extractor/request"
+	"github.com/ONSdigital/dp-observation-extractor/event"
 )
 
-var _ request.ObservationWriter = (*ObservationWriter)(nil)
+var _ event.ObservationWriter = (*ObservationWriter)(nil)
 
 // ObservationWriter when used will capture the reader passed to it for assertions. Will return the configured error.
 type ObservationWriter struct {

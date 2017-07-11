@@ -1,4 +1,4 @@
-package requesttest
+package eventtest
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/kafka"
