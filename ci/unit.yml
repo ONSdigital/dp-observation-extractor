@@ -1,0 +1,16 @@
+---
+
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+    tag: 1.8.3
+
+inputs:
+  - name: dp-observation-extractor
+    path: go/src/github.com/ONSdigital/dp-observation-extractor
+
+run:
+  path: go/src/github.com/ONSdigital/dp-observation-extractor/ci/scripts/unit.sh
