@@ -14,7 +14,7 @@ type MessageConsumer interface {
 
 // Handler represents a handler for processing a single event.
 type Handler interface {
-	Handle(event *Event) error
+	Handle(event *DimensionsInserted) error
 }
 
 // Consume convert them to event instances, and pass the event to the provided handler.
@@ -23,7 +23,7 @@ func Consume(messageConsumer MessageConsumer, handler Handler) {
 
 		event, err := Unmarshal(message)
 		if err != nil {
-			log.Error(err, log.Data{"schema": "failed to unmarshal event"})
+			log.Error(err, log.Data{"message": "failed to unmarshal event"})
 			continue
 		}
 
@@ -31,7 +31,7 @@ func Consume(messageConsumer MessageConsumer, handler Handler) {
 
 		err = handler.Handle(event)
 		if err != nil {
-			log.Error(err, log.Data{"schema": "failed to handle event"})
+			log.Error(err, log.Data{"message": "failed to handle event"})
 			continue
 		}
 
@@ -42,8 +42,8 @@ func Consume(messageConsumer MessageConsumer, handler Handler) {
 }
 
 // Unmarshal converts a event instance to []byte.
-func Unmarshal(message kafka.Message) (*Event, error) {
-	var event Event
+func Unmarshal(message kafka.Message) (*DimensionsInserted, error) {
+	var event DimensionsInserted
 	err := schema.DimensionsInsertedEvent.Unmarshal(message.GetData(), &event)
 	return &event, err
 }

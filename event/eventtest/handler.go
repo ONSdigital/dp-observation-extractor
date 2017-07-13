@@ -9,7 +9,7 @@ var _ event.Handler = (*EventHandler)(nil)
 // NewEventHandler returns a new mock event handler to capture event
 func NewEventHandler() *EventHandler {
 
-	events := make([]event.Event, 0)
+	events := make([]event.DimensionsInserted, 0)
 
 	return &EventHandler{
 		Events: events,
@@ -18,12 +18,12 @@ func NewEventHandler() *EventHandler {
 
 // EventHandler provides a mock implementation that captures events to check.
 type EventHandler struct {
-	Events []event.Event
+	Events []event.DimensionsInserted
 	Error  error
 }
 
 // Handle captures the given event and stores it for later assertions
-func (handler *EventHandler) Handle(event *event.Event) error {
+func (handler *EventHandler) Handle(event *event.DimensionsInserted) error {
 	handler.Events = append(handler.Events, *event)
 	return handler.Error
 }

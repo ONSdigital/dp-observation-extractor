@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-func TestConsumeMessages_UnmarshallError(t *testing.T) {
-	Convey("Given a schema consumer with an invalid schema and a valid schema", t, func() {
+func TestConsume_UnmarshallError(t *testing.T) {
+	Convey("Given an event consumer with an invalid schema and a valid schema", t, func() {
 
 		messages := make(chan kafka.Message, 2)
 		messageConsumer := eventtest.NewMessageConsumer(messages)
@@ -37,9 +37,9 @@ func TestConsumeMessages_UnmarshallError(t *testing.T) {
 	})
 }
 
-func TestConsumeMessages(t *testing.T) {
+func TestConsume(t *testing.T) {
 
-	Convey("Given a schema consumer with a valid schema", t, func() {
+	Convey("Given an event consumer with a valid schema", t, func() {
 
 		messages := make(chan kafka.Message, 1)
 		messageConsumer := eventtest.NewMessageConsumer(messages)
@@ -52,7 +52,7 @@ func TestConsumeMessages(t *testing.T) {
 		messages <- message
 		close(messages)
 
-		Convey("When consume messages is called", func() {
+		Convey("When consume is called", func() {
 
 			event.Consume(messageConsumer, handler)
 
@@ -92,14 +92,14 @@ func TestToEvent(t *testing.T) {
 }
 
 // Marshal helper method to marshal a event into a []byte
-func Marshal(event event.Event) []byte {
+func Marshal(event event.DimensionsInserted) []byte {
 	bytes, err := schema.DimensionsInsertedEvent.Marshal(event)
 	So(err, ShouldBeNil)
 	return bytes
 }
 
-func getExampleEvent() *event.Event {
-	expectedEvent := &event.Event{
+func getExampleEvent() *event.DimensionsInserted {
+	expectedEvent := &event.DimensionsInserted{
 		InstanceID: "1234",
 		FileURL:    "s3://some-file",
 	}

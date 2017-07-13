@@ -31,7 +31,7 @@ type ObservationWriter interface {
 }
 
 // Handle takes a single event, and returns the observations gathered from the URL in the event.
-func (handler CSVHandler) Handle(event *Event) error {
+func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 
 	url := event.FileURL
 
