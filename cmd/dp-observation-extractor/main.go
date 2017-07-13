@@ -14,6 +14,8 @@ import (
 
 func main() {
 
+	log.Namespace = "dp-observation-extractor"
+
 	config, err := config.Get()
 	if err != nil {
 		log.Error(err, nil)
@@ -27,14 +29,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	kafkaBrokers := []string{config.KafkaAddr}
-
 	kafkaConsumer, err := kafka.NewConsumerGroup(config.FileConsumerTopic, config.FileConsumerGroup)
 	if err != nil {
 		log.Error(err, log.Data{"message": "failed to create kafka consumer"})
 		os.Exit(1)
 	}
 
+	kafkaBrokers := []string{config.KafkaAddr}
 	kafkaProducer := kafka.NewProducer(kafkaBrokers, config.ObservationProducerTopic, 0)
 
 	signals := make(chan os.Signal, 1)
