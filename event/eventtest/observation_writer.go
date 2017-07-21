@@ -1,8 +1,8 @@
 package eventtest
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-observation-extractor/event"
+	"github.com/ONSdigital/dp-observation-extractor/observation"
 )
 
 var _ event.ObservationWriter = (*ObservationWriter)(nil)

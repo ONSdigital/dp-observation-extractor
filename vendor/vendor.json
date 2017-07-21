@@ -3,16 +3,22 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "fmdEilILR4HCKBMAVl2Hkw4MN9o=",
-			"path": "github.com/ONSdigital/dp-publish-pipeline/utils",
-			"revision": "6d71da34b3d812949e56293b24f7986029101b70",
-			"revisionTime": "2017-06-26T10:18:23Z"
-		},
-		{
 			"checksumSHA1": "UvospQG3Po/190Rl2TH/LmnqaeA=",
 			"path": "github.com/ONSdigital/go-ns/avro",
 			"revision": "ae4cf4ecfe461780897abffd0ebfd165f88464d4",
 			"revisionTime": "2017-07-07T15:45:31Z"
+		},
+		{
+			"checksumSHA1": "y+/SgY99+YR0/omjsLQ1b4Pmq3g=",
+			"path": "github.com/ONSdigital/go-ns/kafka",
+			"revision": "2eacf03a56b8af2f433f7311f6da135dafb2c207",
+			"revisionTime": "2017-07-21T14:36:54Z"
+		},
+		{
+			"checksumSHA1": "XxpAeP/OwIe2MDbHGBuNdwNtR4Q=",
+			"path": "github.com/ONSdigital/go-ns/kafka/kafkatest",
+			"revision": "2eacf03a56b8af2f433f7311f6da135dafb2c207",
+			"revisionTime": "2017-07-21T14:36:54Z"
 		},
 		{
 			"checksumSHA1": "AjbjbhFVAOP/1NU5HL+uy+X/yJo=",

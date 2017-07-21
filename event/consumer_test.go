@@ -1,10 +1,11 @@
 package event_test
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/kafka"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/event/eventtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
+	"github.com/ONSdigital/go-ns/kafka"
+	"github.com/ONSdigital/go-ns/kafka/kafkatest"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
@@ -13,7 +14,7 @@ func TestConsume_UnmarshallError(t *testing.T) {
 	Convey("Given an event consumer with an invalid schema and a valid schema", t, func() {
 
 		messages := make(chan kafka.Message, 2)
-		messageConsumer := eventtest.NewMessageConsumer(messages)
+		messageConsumer := kafkatest.NewMessageConsumer(messages)
 		handler := eventtest.NewEventHandler()
 
 		expectedEvent := getExampleEvent()
@@ -42,7 +43,7 @@ func TestConsume(t *testing.T) {
 	Convey("Given an event consumer with a valid schema", t, func() {
 
 		messages := make(chan kafka.Message, 1)
-		messageConsumer := eventtest.NewMessageConsumer(messages)
+		messageConsumer := kafkatest.NewMessageConsumer(messages)
 		handler := eventtest.NewEventHandler()
 
 		expectedEvent := getExampleEvent()

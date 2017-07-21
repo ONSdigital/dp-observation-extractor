@@ -1,8 +1,8 @@
 package event
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/kafka"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
+	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 )
 

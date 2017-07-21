@@ -4,6 +4,7 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
+	"github.com/ONSdigital/go-ns/kafka/kafkatest"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )
@@ -23,7 +24,7 @@ func TestMessageWriter_WriteAll(t *testing.T) {
 
 		// mock schema producer contains the output channel to capture messages sent.
 		outputChannel := make(chan []byte, 1)
-		mockMessageProducer := observationtest.MessageProducer{OutputChannel: outputChannel}
+		mockMessageProducer := kafkatest.NewMessageProducer(outputChannel, nil, nil)
 
 		observationMessageWriter := observation.NewMessageWriter(mockMessageProducer)
 

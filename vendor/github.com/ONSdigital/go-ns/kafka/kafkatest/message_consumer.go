@@ -1,12 +1,8 @@
-package eventtest
+package kafkatest
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/kafka"
-	"github.com/ONSdigital/dp-observation-extractor/event"
+	"github.com/ONSdigital/go-ns/kafka"
 )
-
-var _ event.MessageConsumer = (*MessageConsumer)(nil)
-
 // NewMessageConsumer creates a consumer using the given channel.
 func NewMessageConsumer(messages chan kafka.Message) *MessageConsumer {
 	return &MessageConsumer{

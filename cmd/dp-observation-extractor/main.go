@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/ONSdigital/dp-observation-extractor/config"
-	"github.com/ONSdigital/dp-observation-extractor/kafka"
-	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-observation-extractor/event"
+	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/s3"
 	"os"
@@ -29,13 +29,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	kafkaConsumer, err := kafka.NewConsumerGroup(config.FileConsumerTopic, config.FileConsumerGroup)
+	kafkaBrokers := []string{config.KafkaAddr}
+
+	kafkaConsumer, err := kafka.NewConsumerGroup(kafkaBrokers,
+		config.FileConsumerTopic,
+		config.FileConsumerGroup,
+		kafka.OffsetNewest)
 	if err != nil {
 		log.Error(err, log.Data{"message": "failed to create kafka consumer"})
 		os.Exit(1)
 	}
 
-	kafkaBrokers := []string{config.KafkaAddr}
 	kafkaProducer := kafka.NewProducer(kafkaBrokers, config.ObservationProducerTopic, 0)
 
 	signals := make(chan os.Signal, 1)
