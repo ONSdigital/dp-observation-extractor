@@ -19,8 +19,8 @@ func TestConsume_UnmarshallError(t *testing.T) {
 
 		expectedEvent := getExampleEvent()
 
-		messages <- &eventtest.Message{Data: []byte("invalid schema")}
-		messages <- &eventtest.Message{Data: Marshal(*expectedEvent)}
+		messages <- kafkatest.NewMessage([]byte("invalid schema"))
+		messages <- kafkatest.NewMessage(Marshal(*expectedEvent))
 		close(messages)
 
 		Convey("When consume messages is called", func() {
@@ -48,7 +48,7 @@ func TestConsume(t *testing.T) {
 
 		expectedEvent := getExampleEvent()
 
-		message := &eventtest.Message{Data: Marshal(*expectedEvent)}
+		message := kafkatest.NewMessage(Marshal(*expectedEvent))
 
 		messages <- message
 		close(messages)
@@ -77,7 +77,7 @@ func TestToEvent(t *testing.T) {
 	Convey("Given a event schema encoded using avro", t, func() {
 
 		expectedEvent := getExampleEvent()
-		message := &eventtest.Message{Data: Marshal(*expectedEvent)}
+		message := kafkatest.NewMessage(Marshal(*expectedEvent))
 
 		Convey("When the expectedEvent is unmarshalled", func() {
 
