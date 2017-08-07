@@ -23,7 +23,7 @@ func Get() (*Config, error) {
 		FileConsumerGroup:        "dimensions-inserted",
 		FileConsumerTopic:        "dimensions-inserted",
 		AWSRegion:                "eu-west-1",
-		ObservationProducerTopic: "observation-io-extracted",
+		ObservationProducerTopic: "observation-extracted",
 	}
 
 	err := gofigure.Gofigure(&cfg)
