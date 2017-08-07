@@ -1,9 +1,10 @@
 package config_test
 
 import (
+	"testing"
+
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 func TestSpec(t *testing.T) {
@@ -24,7 +25,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.FileConsumerGroup, ShouldEqual, "dimensions-inserted")
 				So(cfg.FileConsumerTopic, ShouldEqual, "dimensions-inserted")
 				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")
-				So(cfg.ObservationProducerTopic, ShouldEqual, "observation-io-extracted")
+				So(cfg.ObservationProducerTopic, ShouldEqual, "observation-extracted")
 			})
 		})
 	})
