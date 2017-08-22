@@ -21,7 +21,7 @@ func TestSpec(t *testing.T) {
 
 			Convey("The values should be set to the expected defaults", func() {
 				So(cfg.BindAddr, ShouldEqual, ":21600")
-				So(cfg.KafkaAddr, ShouldEqual, "http://localhost:9092")
+				So(cfg.KafkaAddr, ShouldEqual, "localhost:9092")
 				So(cfg.FileConsumerGroup, ShouldEqual, "dimensions-inserted")
 				So(cfg.FileConsumerTopic, ShouldEqual, "dimensions-inserted")
 				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")

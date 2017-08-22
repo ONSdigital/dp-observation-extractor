@@ -19,7 +19,7 @@ func Get() (*Config, error) {
 
 	cfg := Config{
 		BindAddr:                 ":21600",
-		KafkaAddr:                "http://localhost:9092",
+		KafkaAddr:                "localhost:9092",
 		FileConsumerGroup:        "dimensions-inserted",
 		FileConsumerTopic:        "dimensions-inserted",
 		AWSRegion:                "eu-west-1",
