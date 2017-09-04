@@ -1,17 +1,15 @@
 package config
 
-import (
-	"github.com/ian-kent/gofigure"
-)
+import "github.com/kelseyhightower/envconfig"
 
 // Config values for the application.
 type Config struct {
-	BindAddr                 string `env:"BIND_ADDR" flag:"bind-addr" flagDesc:"The port to bind to"`
-	KafkaAddr                string `env:"KAFKA_ADDR" flag:"kafka-addr" flagDesc:"The address of the Kafka instance"`
-	FileConsumerGroup        string `env:"FILE_CONSUMER_GROUP" flag:"file-consumer-group" flagDesc:"The Kafka consumer group to consume file messages from"`
-	FileConsumerTopic        string `env:"FILE_CONSUMER_TOPIC" flag:"file-consumer-topic" flagDesc:"The Kafka topic to consume file messages from"`
-	AWSRegion                string `env:"AWS_REGION" flag:"aws-region" flagDesc:"The AWS region to use"`
-	ObservationProducerTopic string `env:"OBSERVATION_PRODUCER_TOPIC" flag:"observation-producer-topic" flagDesc:"The Kafka topic to send the observation messages to"`
+	BindAddr                 string `envconfig:"BIND_ADDR"`
+	KafkaAddr                string `envconfig:"KAFKA_ADDR"`
+	FileConsumerGroup        string `envconfig:"FILE_CONSUMER_GROUP"`
+	FileConsumerTopic        string `envconfig:"FILE_CONSUMER_TOPIC"`
+	AWSRegion                string `envconfig:"AWS_REGION"`
+	ObservationProducerTopic string `envconfig:"OBSERVATION_PRODUCER_TOPIC"`
 }
 
 // Get the configuration values from the environment or provide the defaults.
@@ -26,7 +24,5 @@ func Get() (*Config, error) {
 		ObservationProducerTopic: "observation-extracted",
 	}
 
-	err := gofigure.Gofigure(&cfg)
-
-	return &cfg, err
+	return cfg, envconfig.Process("", cfg)
 }
