@@ -15,7 +15,7 @@ type Config struct {
 // Get the configuration values from the environment or provide the defaults.
 func Get() (*Config, error) {
 
-	cfg := Config{
+	cfg := &Config{
 		BindAddr:                 ":21600",
 		KafkaAddr:                "localhost:9092",
 		FileConsumerGroup:        "dimensions-inserted",
