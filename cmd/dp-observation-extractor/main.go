@@ -29,9 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	kafkaBrokers := []string{config.KafkaAddr}
-
-	kafkaConsumer, err := kafka.NewConsumerGroup(kafkaBrokers,
+	kafkaConsumer, err := kafka.NewConsumerGroup(config.KafkaAddr,
 		config.FileConsumerTopic,
 		config.FileConsumerGroup,
 		kafka.OffsetNewest)
@@ -40,7 +38,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	kafkaProducer := kafka.NewProducer(kafkaBrokers, config.ObservationProducerTopic, 0)
+	kafkaProducer := kafka.NewProducer(config.KafkaAddr, config.ObservationProducerTopic, 0)
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
