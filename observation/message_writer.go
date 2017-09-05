@@ -1,6 +1,7 @@
 package observation
 
 import (
+	"github.com/ONSdigital/dp-observation-extractor/errors"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/go-ns/log"
 )
@@ -8,6 +9,7 @@ import (
 // MessageWriter writes observations as messages
 type MessageWriter struct {
 	messageProducer MessageProducer
+	errorHandler    errors.Handler
 }
 
 // MessageProducer dependency that writes messages
@@ -17,9 +19,10 @@ type MessageProducer interface {
 }
 
 // NewMessageWriter returns a new observation message writer.
-func NewMessageWriter(messageProducer MessageProducer) *MessageWriter {
+func NewMessageWriter(messageProducer MessageProducer, errorHandler errors.Handler) *MessageWriter {
 	return &MessageWriter{
 		messageProducer: messageProducer,
+		errorHandler:    errorHandler,
 	}
 }
 
@@ -37,6 +40,7 @@ func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) {
 
 		bytes, err := schema.ObservationExtractedEvent.Marshal(extractedEvent)
 		if err != nil {
+			messageWriter.errorHandler.Handle(instanceID, err, nil)
 			log.Error(err, log.Data{
 				"schema": "failed to marshal observation extracted event",
 				"event":  extractedEvent})

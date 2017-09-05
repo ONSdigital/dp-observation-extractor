@@ -1,22 +1,26 @@
 package event
 
 import (
+	"io"
+
+	"github.com/ONSdigital/dp-observation-extractor/errors"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/go-ns/log"
-	"io"
 )
 
 // CSVHandler handles events to extract observations from CSV files.
 type CSVHandler struct {
 	fileGetter        FileGetter
 	observationWriter ObservationWriter
+	errorHandler      errors.Handler
 }
 
 // NewCSVHandler returns a new CSVHandler instance that uses the given file.FileGetter and Output producer.
-func NewCSVHandler(fileGetter FileGetter, observationWriter ObservationWriter) *CSVHandler {
+func NewCSVHandler(fileGetter FileGetter, observationWriter ObservationWriter, errorHandler errors.Handler) *CSVHandler {
 	return &CSVHandler{
 		observationWriter: observationWriter,
 		fileGetter:        fileGetter,
+		errorHandler:      errorHandler,
 	}
 }
 
@@ -38,11 +42,13 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 	log.Debug("getting file", log.Data{"url": url, "event": event})
 	readCloser, err := handler.fileGetter.Get(url)
 	if err != nil {
+		handler.errorHandler.Handle(event.InstanceID, err, nil)
 		return err
 	}
 	defer func(readCloser io.ReadCloser) {
 		closeErr := readCloser.Close()
 		if closeErr != nil {
+			handler.errorHandler.Handle(event.InstanceID, err, nil)
 			log.Error(closeErr, nil)
 		}
 	}(readCloser)

@@ -12,6 +12,7 @@ type Config struct {
 	FileConsumerTopic        string `env:"FILE_CONSUMER_TOPIC" flag:"file-consumer-topic" flagDesc:"The Kafka topic to consume file messages from"`
 	AWSRegion                string `env:"AWS_REGION" flag:"aws-region" flagDesc:"The AWS region to use"`
 	ObservationProducerTopic string `env:"OBSERVATION_PRODUCER_TOPIC" flag:"observation-producer-topic" flagDesc:"The Kafka topic to send the observation messages to"`
+	ErrorProducerTopic       string `env:"ERROR_PRODUCER_TOPIC" flag:"error-producer-topic" flagDesc:"The Kafka topic to send error messages to"`
 }
 
 // Get the configuration values from the environment or provide the defaults.
@@ -24,6 +25,7 @@ func Get() (*Config, error) {
 		FileConsumerTopic:        "dimensions-inserted",
 		AWSRegion:                "eu-west-1",
 		ObservationProducerTopic: "observation-extracted",
+		ErrorProducerTopic:       "event-reporter",
 	}
 
 	err := gofigure.Gofigure(&cfg)
