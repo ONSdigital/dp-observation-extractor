@@ -42,13 +42,13 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 	log.Debug("getting file", log.Data{"url": url, "event": event})
 	readCloser, err := handler.fileGetter.Get(url)
 	if err != nil {
-		handler.errorHandler.Handle(event.InstanceID, err, nil)
+		handler.errorHandler.Handle(event.InstanceID, err)
 		return err
 	}
 	defer func(readCloser io.ReadCloser) {
 		closeErr := readCloser.Close()
 		if closeErr != nil {
-			handler.errorHandler.Handle(event.InstanceID, err, nil)
+			handler.errorHandler.Handle(event.InstanceID, err)
 			log.Error(closeErr, nil)
 		}
 	}(readCloser)

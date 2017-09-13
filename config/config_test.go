@@ -26,6 +26,7 @@ func TestSpec(t *testing.T) {
 				So(cfg.FileConsumerTopic, ShouldEqual, "dimensions-inserted")
 				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")
 				So(cfg.ObservationProducerTopic, ShouldEqual, "observation-extracted")
+				So(cfg.ErrorProducerTopic, ShouldEqual, "event-reporter")
 			})
 		})
 	})

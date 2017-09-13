@@ -1,12 +1,13 @@
 package event_test
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/event"
-	"github.com/ONSdigital/dp-observation-extractor/event/eventtest"
-	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/ONSdigital/dp-observation-extractor/event"
+	"github.com/ONSdigital/dp-observation-extractor/event/eventtest"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var exampleHeader string = "Observation,other,stuff"
@@ -22,7 +23,7 @@ func TestCsvHandler_FileGetterError(t *testing.T) {
 		fileGetterStub := &eventtest.FileGetter{Error: expectedError}
 		observationWriterStub := &eventtest.ObservationWriter{}
 
-		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub)
+		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub, nil)
 
 		Convey("When handle is called", func() {
 
@@ -44,7 +45,7 @@ func TestCsvHandler_FileGetterUrl(t *testing.T) {
 		fileGetterStub := &eventtest.FileGetter{Error: io.EOF}
 		observationWriterStub := &eventtest.ObservationWriter{}
 
-		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub)
+		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub, nil)
 
 		Convey("When handle is called with the example event", func() {
 
@@ -67,7 +68,7 @@ func TestCsvHandler_FileReaderClose(t *testing.T) {
 		fileGetterStub := &eventtest.FileGetter{Reader: stubReadCloser}
 		observationWriterStub := &eventtest.ObservationWriter{}
 
-		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub)
+		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub, nil)
 
 		Convey("When handle is called", func() {
 
@@ -90,7 +91,7 @@ func TestCsvHandler(t *testing.T) {
 		fileGetterStub := &eventtest.FileGetter{Reader: stubReadCloser}
 		observationWriterStub := &eventtest.ObservationWriter{}
 
-		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub)
+		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub, nil)
 
 		Convey("When handle is called", func() {
 

@@ -1,12 +1,13 @@
 package observation_test
 
 import (
+	"testing"
+
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/go-ns/kafka/kafkatest"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 func TestMessageWriter_WriteAll(t *testing.T) {
@@ -26,7 +27,7 @@ func TestMessageWriter_WriteAll(t *testing.T) {
 		outputChannel := make(chan []byte, 1)
 		mockMessageProducer := kafkatest.NewMessageProducer(outputChannel, nil, nil)
 
-		observationMessageWriter := observation.NewMessageWriter(mockMessageProducer)
+		observationMessageWriter := observation.NewMessageWriter(mockMessageProducer, nil)
 
 		Convey("When write all is called on the observation schema writer", func() {
 

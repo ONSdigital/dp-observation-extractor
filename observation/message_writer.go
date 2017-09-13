@@ -40,7 +40,7 @@ func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) {
 
 		bytes, err := schema.ObservationExtractedEvent.Marshal(extractedEvent)
 		if err != nil {
-			messageWriter.errorHandler.Handle(instanceID, err, nil)
+			messageWriter.errorHandler.Handle(instanceID, err)
 			log.Error(err, log.Data{
 				"schema": "failed to marshal observation extracted event",
 				"event":  extractedEvent})

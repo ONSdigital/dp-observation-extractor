@@ -2,9 +2,10 @@ package s3
 
 import (
 	"io"
+	"time"
+
 	"github.com/goamz/goamz/aws"
 	"github.com/goamz/goamz/s3"
-	"time"
 )
 
 // S3 provides AWS S3 functions that support fully qualified URL's.
@@ -45,4 +46,16 @@ func (s3 *S3) Get(rawURL string) (io.ReadCloser, error) {
 	}
 
 	return reader, nil
+}
+
+//GetWithHost passes through the region and url mainly for testing purposes
+func GetWithHost(region string, url string) (*S3, error) {
+	auth, err := aws.GetAuth("", "", "", time.Time{})
+	if err != nil {
+		return nil, err
+	}
+	s3 := s3.New(auth, aws.Region{Name: region, S3Endpoint: url})
+	return &S3{
+		s3,
+	}, nil
 }
