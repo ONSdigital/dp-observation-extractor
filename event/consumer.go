@@ -9,7 +9,6 @@ import (
 // MessageConsumer provides a generic interface for consuming []byte messages
 type MessageConsumer interface {
 	Incoming() chan kafka.Message
-	Closer() chan bool
 }
 
 // Handler represents a handler for processing a single event.
