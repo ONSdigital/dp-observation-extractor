@@ -6,8 +6,10 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/kafka/kafkatest"
+	"github.com/ONSdigital/go-ns/log"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+	"time"
 )
 
 func TestConsume_UnmarshallError(t *testing.T) {
@@ -21,11 +23,13 @@ func TestConsume_UnmarshallError(t *testing.T) {
 
 		messages <- kafkatest.NewMessage([]byte("invalid schema"))
 		messages <- kafkatest.NewMessage(Marshal(*expectedEvent))
-		close(messages)
 
 		Convey("When consume messages is called", func() {
 
-			event.Consume(messageConsumer, handler)
+			consumer := event.NewConsumer()
+			go consumer.Consume(messageConsumer, handler)
+
+			waitForEventsToBeSentToHandler(handler)
 
 			Convey("Only the valid event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
@@ -49,13 +53,14 @@ func TestConsume(t *testing.T) {
 		expectedEvent := getExampleEvent()
 
 		message := kafkatest.NewMessage(Marshal(*expectedEvent))
-
 		messages <- message
-		close(messages)
 
 		Convey("When consume is called", func() {
 
-			event.Consume(messageConsumer, handler)
+			consumer := event.NewConsumer()
+			go consumer.Consume(messageConsumer, handler)
+
+			waitForEventsToBeSentToHandler(handler)
 
 			Convey("A event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
@@ -92,6 +97,33 @@ func TestToEvent(t *testing.T) {
 	})
 }
 
+func TestClose(t *testing.T) {
+
+	Convey("Given a consumer", t, func() {
+
+		messages := make(chan kafka.Message, 1)
+		messageConsumer := kafkatest.NewMessageConsumer(messages)
+		handler := eventtest.NewEventHandler()
+
+		expectedEvent := getExampleEvent()
+
+		message := kafkatest.NewMessage(Marshal(*expectedEvent))
+		messages <- message
+
+		consumer := event.NewConsumer()
+		go consumer.Consume(messageConsumer, handler)
+
+		Convey("When close is called", func() {
+
+			err := consumer.Close(nil)
+
+			Convey("The expected event is sent to the handler", func() {
+				So(err, ShouldBeNil)
+			})
+		})
+	})
+}
+
 // Marshal helper method to marshal a event into a []byte
 func Marshal(event event.DimensionsInserted) []byte {
 	bytes, err := schema.DimensionsInsertedEvent.Marshal(event)
@@ -105,4 +137,23 @@ func getExampleEvent() *event.DimensionsInserted {
 		FileURL:    "s3://some-file",
 	}
 	return expectedEvent
+}
+
+func waitForEventsToBeSentToHandler(eventHandler *eventtest.EventHandler) {
+
+	start := time.Now()
+	timeout := start.Add(time.Millisecond * 500)
+	for {
+		if len(eventHandler.Events) > 0 {
+			log.Debug("events have been sent to the handler", nil)
+			break
+		}
+
+		if time.Now().After(timeout) {
+			log.Debug("timeout hit", nil)
+			break
+		}
+
+		time.Sleep(time.Millisecond * 10)
+	}
 }

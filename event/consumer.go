@@ -1,6 +1,8 @@
 package event
 
 import (
+	"context"
+	"errors"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
@@ -16,27 +18,72 @@ type Handler interface {
 	Handle(event *DimensionsInserted) error
 }
 
+type Consumer struct {
+	closing chan bool
+	closed  chan bool
+}
+
+// NewConsumerGroup returns a new consumer group using default configuration.
+func NewConsumer() *Consumer {
+	return &Consumer{
+		closing: make(chan bool),
+		closed:  make(chan bool),
+	}
+}
+
 // Consume convert them to event instances, and pass the event to the provided handler.
-func Consume(messageConsumer MessageConsumer, handler Handler) {
-	for message := range messageConsumer.Incoming() {
+func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handler) {
 
-		event, err := Unmarshal(message)
-		if err != nil {
-			log.Error(err, log.Data{"message": "failed to unmarshal event"})
-			continue
+	go func() {
+		defer close(consumer.closed)
+
+		for {
+			select {
+			case message := <-messageConsumer.Incoming():
+
+				event, err := Unmarshal(message)
+				if err != nil {
+					log.Error(err, log.Data{"message": "failed to unmarshal event"})
+					continue
+				}
+
+				log.Debug("event received", log.Data{"event": event})
+
+				err = handler.Handle(event)
+				if err != nil {
+					log.Error(err, log.Data{"message": "failed to handle event"})
+					continue
+				}
+
+				log.Debug("event processed - committing message", log.Data{"event": event})
+				message.Commit()
+				log.Debug("message committed", log.Data{"event": event})
+
+			case <-consumer.closing:
+				log.Info("closing event consumer loop", nil)
+				return
+			}
 		}
 
-		log.Debug("event received", log.Data{"event": event})
+	}()
+}
 
-		err = handler.Handle(event)
-		if err != nil {
-			log.Error(err, log.Data{"message": "failed to handle event"})
-			continue
-		}
+// Close safely closes the consumer and releases all resources
+func (consumer *Consumer) Close(ctx context.Context) (err error) {
 
-		log.Debug("event processed - committing message", log.Data{"event": event})
-		message.Commit()
-		log.Debug("message committed", log.Data{"event": event})
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	close(consumer.closing)
+
+	select {
+	case <-consumer.closed:
+		log.Info("successfully closed event consumer", nil)
+		return nil
+	case <-ctx.Done():
+		log.Info("shutdown context time exceeded, skipping graceful shutdown of event consumer", nil)
+		return errors.New("Shutdown context timed out")
 	}
 }
 
