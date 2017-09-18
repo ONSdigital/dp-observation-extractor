@@ -1,6 +1,7 @@
 package event_test
 
 import (
+	"context"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/event/eventtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
@@ -115,7 +116,7 @@ func TestClose(t *testing.T) {
 
 		Convey("When close is called", func() {
 
-			err := consumer.Close(nil)
+			err := consumer.Close(context.Background())
 
 			Convey("The expected event is sent to the handler", func() {
 				So(err, ShouldBeNil)

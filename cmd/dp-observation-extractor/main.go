@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/go-ns/handlers/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/s3"
+	"github.com/ONSdigital/go-ns/server"
+	"github.com/gorilla/mux"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,6 +27,25 @@ func main() {
 	}
 	log.Debug("loaded config", log.Data{"config": config})
 
+	// a channel used to signal a graceful exit is required.
+	errorChannel := make(chan error)
+
+	router := mux.NewRouter()
+	router.Path("/healthcheck").HandlerFunc(healthcheck.Handler)
+	httpServer := server.New(config.BindAddr, router)
+
+	// Disable auto handling of os signals by the HTTP server. This is handled
+	// in the service so we can gracefully shutdown resources other than just
+	// the HTTP server.
+	httpServer.HandleOSSignals = false
+
+	go func() {
+		log.Debug("starting http server", log.Data{"bind_addr": config.BindAddr})
+		if err := httpServer.ListenAndServe(); err != nil {
+			errorChannel <- err
+		}
+	}()
+
 	s3, err := s3.New(config.AWSRegion)
 	if err != nil {
 		log.Error(err, nil)
@@ -33,29 +56,84 @@ func main() {
 		config.FileConsumerTopic,
 		config.FileConsumerGroup,
 		kafka.OffsetNewest)
-	if err != nil {
-		log.Error(err, log.Data{"message": "failed to create kafka consumer"})
-		os.Exit(1)
-	}
+	checkForError(err)
 
-	kafkaProducer := kafka.NewProducer(config.KafkaAddr, config.ObservationProducerTopic, 0)
+	kafkaObservationProducer, err := kafka.NewProducer(config.KafkaAddr, config.ObservationProducerTopic, 0)
+	checkForError(err)
+
+	kafkaErrorProducer, err := kafka.NewProducer(config.KafkaAddr, config.ErrorProducerTopic, 0)
+	checkForError(err)
+
+	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
+	eventHandler := event.NewCSVHandler(s3, observationWriter)
+
+	eventConsumer := event.NewConsumer()
+	eventConsumer.Consume(kafkaConsumer, eventHandler)
+
+	shutdownGracefully := func() {
+
+		ctx, cancel := context.WithTimeout(context.Background(), config.GracefulShutdownTimeout)
+
+		// gracefully dispose resources
+		err = eventConsumer.Close(ctx)
+		if err != nil {
+			log.Error(err, nil)
+		}
+
+		err = kafkaConsumer.Close(ctx)
+		if err != nil {
+			log.Error(err, nil)
+		}
+
+		err = kafkaErrorProducer.Close(ctx)
+		if err != nil {
+			log.Error(err, nil)
+		}
+
+		err = kafkaObservationProducer.Close(ctx)
+		if err != nil {
+			log.Error(err, nil)
+		}
+
+		err = httpServer.Shutdown(ctx)
+		if err != nil {
+			log.Error(err, nil)
+		}
+
+		// cancel the timer in the shutdown context.
+		cancel()
+
+		log.Debug("graceful shutdown was successful", nil)
+		os.Exit(0)
+	}
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
-	go func() {
-		<-signals
+	for {
+		select {
+		case err := <-kafkaConsumer.Errors():
+			log.ErrorC("kafka consumer", err, nil)
+			shutdownGracefully()
+		case err := <-kafkaObservationProducer.Errors():
+			log.ErrorC("kafka result producer", err, nil)
+			shutdownGracefully()
+		case err := <-kafkaErrorProducer.Errors():
+			log.ErrorC("kafka error producer", err, nil)
+			shutdownGracefully()
+		case err := <-errorChannel:
+			log.ErrorC("error channel", err, nil)
+			shutdownGracefully()
+		case <-signals:
+			log.Debug("os signal received", nil)
+			shutdownGracefully()
+		}
+	}
+}
 
-		// gracefully dispose resources
-		kafkaConsumer.Closer() <- true
-		kafkaProducer.Closer() <- true
-
-		log.Debug("graceful shutdown was successful", nil)
-		os.Exit(0)
-	}()
-
-	observationWriter := observation.NewMessageWriter(kafkaProducer)
-	eventHandler := event.NewCSVHandler(s3, observationWriter)
-
-	event.Consume(kafkaConsumer, eventHandler)
+func checkForError(err error) {
+	if err != nil {
+		log.Error(err, nil)
+		os.Exit(1)
+	}
 }
