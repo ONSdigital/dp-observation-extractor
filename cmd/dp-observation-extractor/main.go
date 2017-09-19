@@ -26,7 +26,7 @@ func main() {
 	log.Debug("loaded config", log.Data{"config": config})
 	//TODO Delete once finished testing.
 	s3URL := "localhost:4000"
-	s3, err := s3.GetWithHost("", s3URL)
+	s3, err := s3.GetWithHost(config.AWSRegion, s3URL)
 	if err != nil {
 		log.Error(err, nil)
 		os.Exit(1)
