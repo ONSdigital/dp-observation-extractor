@@ -11,6 +11,7 @@ import (
 	"github.com/ONSdigital/go-ns/s3"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -47,10 +48,7 @@ func main() {
 	}()
 
 	s3, err := s3.New(config.AWSRegion)
-	if err != nil {
-		log.Error(err, nil)
-		os.Exit(1)
-	}
+	checkForError(err)
 
 	kafkaConsumer, err := kafka.NewConsumerGroup(config.KafkaAddr,
 		config.FileConsumerTopic,
@@ -104,7 +102,7 @@ func main() {
 		cancel()
 
 		log.Debug("graceful shutdown was successful", nil)
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	signals := make(chan os.Signal, 1)
@@ -125,7 +123,7 @@ func main() {
 			log.ErrorC("error channel", err, nil)
 			shutdownGracefully()
 		case <-signals:
-			log.Debug("os signal received", nil)
+			log.Error(errors.New("os signal received"), nil)
 			shutdownGracefully()
 		}
 	}

@@ -23,12 +23,12 @@ func TestConsume_UnmarshallError(t *testing.T) {
 		expectedEvent := getExampleEvent()
 
 		messages <- kafkatest.NewMessage([]byte("invalid schema"))
-		messages <- kafkatest.NewMessage(Marshal(*expectedEvent))
+		messages <- kafkatest.NewMessage(marshal(*expectedEvent))
 
 		Convey("When consume messages is called", func() {
 
 			consumer := event.NewConsumer()
-			go consumer.Consume(messageConsumer, handler)
+			consumer.Consume(messageConsumer, handler)
 
 			waitForEventsToBeSentToHandler(handler)
 
@@ -53,13 +53,13 @@ func TestConsume(t *testing.T) {
 
 		expectedEvent := getExampleEvent()
 
-		message := kafkatest.NewMessage(Marshal(*expectedEvent))
+		message := kafkatest.NewMessage(marshal(*expectedEvent))
 		messages <- message
 
 		Convey("When consume is called", func() {
 
 			consumer := event.NewConsumer()
-			go consumer.Consume(messageConsumer, handler)
+			consumer.Consume(messageConsumer, handler)
 
 			waitForEventsToBeSentToHandler(handler)
 
@@ -83,7 +83,7 @@ func TestToEvent(t *testing.T) {
 	Convey("Given a event schema encoded using avro", t, func() {
 
 		expectedEvent := getExampleEvent()
-		message := kafkatest.NewMessage(Marshal(*expectedEvent))
+		message := kafkatest.NewMessage(marshal(*expectedEvent))
 
 		Convey("When the expectedEvent is unmarshalled", func() {
 
@@ -108,11 +108,11 @@ func TestClose(t *testing.T) {
 
 		expectedEvent := getExampleEvent()
 
-		message := kafkatest.NewMessage(Marshal(*expectedEvent))
+		message := kafkatest.NewMessage(marshal(*expectedEvent))
 		messages <- message
 
 		consumer := event.NewConsumer()
-		go consumer.Consume(messageConsumer, handler)
+		consumer.Consume(messageConsumer, handler)
 
 		Convey("When close is called", func() {
 
@@ -125,8 +125,8 @@ func TestClose(t *testing.T) {
 	})
 }
 
-// Marshal helper method to marshal a event into a []byte
-func Marshal(event event.DimensionsInserted) []byte {
+// marshal helper method to marshal a event into a []byte
+func marshal(event event.DimensionsInserted) []byte {
 	bytes, err := schema.DimensionsInsertedEvent.Marshal(event)
 	So(err, ShouldBeNil)
 	return bytes
