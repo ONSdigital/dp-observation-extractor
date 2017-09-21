@@ -1,15 +1,15 @@
 package observation
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/errors"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
+	"github.com/ONSdigital/go-ns/errorhandler"
 	"github.com/ONSdigital/go-ns/log"
 )
 
 // MessageWriter writes observations as messages
 type MessageWriter struct {
 	messageProducer MessageProducer
-	errorHandler    errors.Handler
+	errorHandler    errorhandler.Handler
 }
 
 // MessageProducer dependency that writes messages
@@ -19,7 +19,7 @@ type MessageProducer interface {
 }
 
 // NewMessageWriter returns a new observation message writer.
-func NewMessageWriter(messageProducer MessageProducer, errorHandler errors.Handler) *MessageWriter {
+func NewMessageWriter(messageProducer MessageProducer, errorHandler errorhandler.Handler) *MessageWriter {
 	return &MessageWriter{
 		messageProducer: messageProducer,
 		errorHandler:    errorHandler,

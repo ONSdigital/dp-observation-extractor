@@ -3,8 +3,8 @@ package event
 import (
 	"io"
 
-	"github.com/ONSdigital/dp-observation-extractor/errors"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/go-ns/errorhandler"
 	"github.com/ONSdigital/go-ns/log"
 )
 
@@ -12,11 +12,11 @@ import (
 type CSVHandler struct {
 	fileGetter        FileGetter
 	observationWriter ObservationWriter
-	errorHandler      errors.Handler
+	errorHandler      errorhandler.Handler
 }
 
 // NewCSVHandler returns a new CSVHandler instance that uses the given file.FileGetter and Output producer.
-func NewCSVHandler(fileGetter FileGetter, observationWriter ObservationWriter, errorHandler errors.Handler) *CSVHandler {
+func NewCSVHandler(fileGetter FileGetter, observationWriter ObservationWriter, errorHandler errorhandler.Handler) *CSVHandler {
 	return &CSVHandler{
 		observationWriter: observationWriter,
 		fileGetter:        fileGetter,

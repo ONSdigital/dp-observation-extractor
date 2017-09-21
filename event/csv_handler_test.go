@@ -26,7 +26,6 @@ func TestCsvHandler_FileGetterError(t *testing.T) {
 		eventHandler := event.NewCSVHandler(fileGetterStub, observationWriterStub, nil)
 
 		Convey("When handle is called", func() {
-
 			_ = eventHandler.Handle(exampleEvent)
 
 			Convey("The error returned from thefile getter is returned from the handler", func() {

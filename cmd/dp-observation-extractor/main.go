@@ -6,9 +6,9 @@ import (
 	"syscall"
 
 	"github.com/ONSdigital/dp-observation-extractor/config"
-	"github.com/ONSdigital/dp-observation-extractor/errors"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/go-ns/errorhandler"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/s3"
@@ -48,7 +48,7 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
-	errorHandler := errors.NewKafkaHandler(kafkaErrorProducer)
+	errorHandler := errorhandler.NewKafkaHandler(kafkaErrorProducer)
 
 	go func() {
 		<-signals
