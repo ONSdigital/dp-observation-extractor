@@ -12,7 +12,7 @@ import (
 type CSVHandler struct {
 	fileGetter        FileGetter
 	observationWriter ObservationWriter
-	errorHandler      errorhandler.Handler
+	errors            errorhandler.Handler
 }
 
 // NewCSVHandler returns a new CSVHandler instance that uses the given file.FileGetter and Output producer.
@@ -20,7 +20,7 @@ func NewCSVHandler(fileGetter FileGetter, observationWriter ObservationWriter, e
 	return &CSVHandler{
 		observationWriter: observationWriter,
 		fileGetter:        fileGetter,
-		errorHandler:      errorHandler,
+		errors:            errorHandler,
 	}
 }
 
@@ -42,13 +42,13 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 	log.Debug("getting file", log.Data{"url": url, "event": event})
 	readCloser, err := handler.fileGetter.Get(url)
 	if err != nil {
-		handler.errorHandler.Handle(event.InstanceID, err)
+		handler.errors.Handle(event.InstanceID, err)
 		return err
 	}
 	defer func(readCloser io.ReadCloser) {
 		closeErr := readCloser.Close()
 		if closeErr != nil {
-			handler.errorHandler.Handle(event.InstanceID, err)
+			handler.errors.Handle(event.InstanceID, err)
 			log.Error(closeErr, nil)
 		}
 	}(readCloser)

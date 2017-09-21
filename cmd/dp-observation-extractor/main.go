@@ -24,14 +24,14 @@ func main() {
 		os.Exit(1)
 	}
 	log.Debug("loaded config", log.Data{"config": config})
-	//TODO Delete once finished testing.
-	s3URL := "localhost:4000"
-	s3, err := s3.GetWithHost(config.AWSRegion, s3URL)
+
+	kafkaBrokers := []string{config.KafkaAddr}
+
+	s3, err := s3.New(config.AWSRegion)
 	if err != nil {
 		log.Error(err, nil)
 		os.Exit(1)
 	}
-	kafkaBrokers := []string{config.KafkaAddr}
 
 	kafkaConsumer, err := kafka.NewConsumerGroup(kafkaBrokers,
 		config.FileConsumerTopic,
