@@ -11,7 +11,7 @@ import (
 	"github.com/ONSdigital/go-ns/s3"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
