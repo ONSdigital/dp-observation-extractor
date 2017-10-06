@@ -17,14 +17,14 @@
 		{
 			"checksumSHA1": "yVhSSS1KY9fmMVUcoZhIVyRB/YA=",
 			"path": "github.com/ONSdigital/dp-reporter-client/model",
-			"revision": "dfae30f5be315415dd742bac7d9597919b3bb126",
-			"revisionTime": "2017-10-05T10:24:40Z"
+			"revision": "46eb028e8f64ddd55ced149a29aa6539db7bab7d",
+			"revisionTime": "2017-10-06T09:00:35Z"
 		},
 		{
 			"checksumSHA1": "9+/RSnsTjyQxIVXfczqMkJpN6fM=",
 			"path": "github.com/ONSdigital/dp-reporter-client/schema",
-			"revision": "dfae30f5be315415dd742bac7d9597919b3bb126",
-			"revisionTime": "2017-10-05T10:24:40Z"
+			"revision": "46eb028e8f64ddd55ced149a29aa6539db7bab7d",
+			"revisionTime": "2017-10-06T09:00:35Z"
 		},
 		{
 			"checksumSHA1": "dzh4fF9o6j+mJEbJn5utm8Q+Pyg=",
