@@ -3,6 +3,30 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "ke/I1GRFPregDs96Bcmpv/xMS4A=",
+			"path": "github.com/ONSdigital/dp-reporter-client/client",
+			"revision": "905fb17acd1805acc83f84949662900aeb53300f",
+			"revisionTime": "2017-10-06T08:58:07Z"
+		},
+		{
+			"checksumSHA1": "ACS4TM7d6qmT3TO8ZYtglZOGY80=",
+			"path": "github.com/ONSdigital/dp-reporter-client/client/clienttest",
+			"revision": "905fb17acd1805acc83f84949662900aeb53300f",
+			"revisionTime": "2017-10-06T08:58:07Z"
+		},
+		{
+			"checksumSHA1": "yVhSSS1KY9fmMVUcoZhIVyRB/YA=",
+			"path": "github.com/ONSdigital/dp-reporter-client/model",
+			"revision": "dfae30f5be315415dd742bac7d9597919b3bb126",
+			"revisionTime": "2017-10-05T10:24:40Z"
+		},
+		{
+			"checksumSHA1": "9+/RSnsTjyQxIVXfczqMkJpN6fM=",
+			"path": "github.com/ONSdigital/dp-reporter-client/schema",
+			"revision": "dfae30f5be315415dd742bac7d9597919b3bb126",
+			"revisionTime": "2017-10-05T10:24:40Z"
+		},
+		{
 			"checksumSHA1": "dzh4fF9o6j+mJEbJn5utm8Q+Pyg=",
 			"path": "github.com/ONSdigital/go-ns/avro",
 			"revision": "5c4e318aa10e56921c4e39fd5735c95868281d33",
@@ -155,13 +179,6 @@
 			"path": "github.com/kelseyhightower/envconfig",
 			"revision": "70f0258d44cbaa3b6a2581d82f58da01a38e4de4",
 			"revisionTime": "2017-05-23T19:07:22Z"
-		},
-		{
-			"checksumSHA1": "hBgLmZ/4mCxmnH88mqFKBkpJFUY=",
-			"origin": "github.com/ONSdigital/dp-publish-pipeline/vendor/github.com/mgutz/ansi",
-			"path": "github.com/mgutz/ansi",
-			"revision": "6d71da34b3d812949e56293b24f7986029101b70",
-			"revisionTime": "2017-06-26T10:18:23Z"
 		},
 		{
 			"checksumSHA1": "FGg99nQ56Fo3radSCuU1AeEUJug=",

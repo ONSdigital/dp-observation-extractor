@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"github.com/ONSdigital/dp-reporter-client/client"
 )
 
 func main() {
@@ -65,8 +66,11 @@ func main() {
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
 	eventHandler := event.NewCSVHandler(s3, observationWriter)
 
+	reporterCli, err := client.NewReporterClient(kafkaErrorProducer, log.Namespace)
+	checkForError(err)
+
 	eventConsumer := event.NewConsumer()
-	eventConsumer.Consume(kafkaConsumer, eventHandler)
+	eventConsumer.Consume(kafkaConsumer, eventHandler, reporterCli)
 
 	shutdownGracefully := func() {
 
