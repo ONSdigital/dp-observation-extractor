@@ -9,17 +9,17 @@ import (
 	"github.com/ONSdigital/go-ns/kafka/kafkatest"
 	"github.com/ONSdigital/go-ns/log"
 
+	"errors"
+	"github.com/ONSdigital/dp-reporter-client/reporter/reportertest"
+	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
-	"errors"
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/ONSdigital/dp-reporter-client/client/clienttest"
 )
 
 func TestConsume_UnmarshallError(t *testing.T) {
 	Convey("Given an event consumer with an invalid schema and a valid schema", t, func() {
 
-		reporter := clienttest.NewReporterClientMock(nil)
+		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messages := make(chan kafka.Message, 2)
 		messageConsumer := kafkatest.NewMessageConsumer(messages)
 		handler := eventtest.NewEventHandler()
@@ -45,7 +45,7 @@ func TestConsume_UnmarshallError(t *testing.T) {
 			})
 
 			Convey("And errorHandler is never called", func() {
-				So(len(reporter.ReportErrorCalls()), ShouldEqual, 0)
+				So(len(reporter.NotifyCalls()), ShouldEqual, 0)
 			})
 		})
 	})
@@ -54,7 +54,7 @@ func TestConsume_UnmarshallError(t *testing.T) {
 func TestConsumer_HandlerError(t *testing.T) {
 	Convey("Given an event consumer with a valid schema", t, func() {
 
-		reporter := clienttest.NewReporterClientMock(clienttest.ReportErrorFunc(nil))
+		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messages := make(chan kafka.Message, 1)
 		messageConsumer := kafkatest.NewMessageConsumer(messages)
 
@@ -85,10 +85,10 @@ func TestConsumer_HandlerError(t *testing.T) {
 			})
 
 			Convey("Then the returned handler error is passed to the error handler", func() {
-				So(len(reporter.ReportErrorCalls()), ShouldEqual, 1)
-				So(reporter.ReportErrorCalls()[0].InstanceID, ShouldEqual, expectedEvent.InstanceID)
-				So(reporter.ReportErrorCalls()[0].ErrContext, ShouldEqual, "failed to handle event")
-				So(reporter.ReportErrorCalls()[0].Err, ShouldResemble, handlerErr)
+				So(len(reporter.NotifyCalls()), ShouldEqual, 1)
+				So(reporter.NotifyCalls()[0].ID, ShouldEqual, expectedEvent.InstanceID)
+				So(reporter.NotifyCalls()[0].ErrContext, ShouldEqual, "failed to handle event")
+				So(reporter.NotifyCalls()[0].Err, ShouldResemble, handlerErr)
 			})
 		})
 	})
@@ -98,7 +98,7 @@ func TestConsume(t *testing.T) {
 
 	Convey("Given an event consumer with a valid schema", t, func() {
 
-		reporter := clienttest.NewReporterClientMock(clienttest.ReportErrorFunc(nil))
+		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messages := make(chan kafka.Message, 1)
 		messageConsumer := kafkatest.NewMessageConsumer(messages)
 		handler := eventtest.NewEventHandler()
@@ -128,7 +128,7 @@ func TestConsume(t *testing.T) {
 			})
 
 			Convey("And errorHandler is never called", func() {
-				So(len(reporter.ReportErrorCalls()), ShouldEqual, 0)
+				So(len(reporter.NotifyCalls()), ShouldEqual, 0)
 			})
 		})
 	})

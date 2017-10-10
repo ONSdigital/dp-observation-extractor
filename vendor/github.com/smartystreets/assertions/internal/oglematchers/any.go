@@ -15,22 +15,18 @@
 
 package oglematchers
 
-// transformDescription returns a matcher that is equivalent to the supplied
-// one, except that it has the supplied description instead of the one attached
-// to the existing matcher.
-func transformDescription(m Matcher, newDesc string) Matcher {
-	return &transformDescriptionMatcher{newDesc, m}
+// Any returns a matcher that matches any value.
+func Any() Matcher {
+	return &anyMatcher{}
 }
 
-type transformDescriptionMatcher struct {
-	desc string
-	wrappedMatcher Matcher
+type anyMatcher struct {
 }
 
-func (m *transformDescriptionMatcher) Description() string {
-	return m.desc
+func (m *anyMatcher) Description() string {
+	return "is anything"
 }
 
-func (m *transformDescriptionMatcher) Matches(c interface{}) error {
-	return m.wrappedMatcher.Matches(c)
+func (m *anyMatcher) Matches(c interface{}) error {
+	return nil
 }

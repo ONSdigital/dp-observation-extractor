@@ -1,4 +1,4 @@
-package clienttest
+package reportertest
 
 // KafkaProducerMock a mock of the go-ns kafka.Producer
 type KafkaProducerMock struct {

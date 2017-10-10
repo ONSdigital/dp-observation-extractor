@@ -2,20 +2,20 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
+	"github.com/ONSdigital/dp-reporter-client/reporter"
 	"github.com/ONSdigital/go-ns/handlers/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 	"github.com/ONSdigital/go-ns/s3"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/gorilla/mux"
-	"errors"
 	"os"
 	"os/signal"
 	"syscall"
-	"github.com/ONSdigital/dp-reporter-client/client"
 )
 
 func main() {
@@ -66,11 +66,11 @@ func main() {
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
 	eventHandler := event.NewCSVHandler(s3, observationWriter)
 
-	reporterCli, err := client.NewReporterClient(kafkaErrorProducer, log.Namespace)
+	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
 	checkForError(err)
 
 	eventConsumer := event.NewConsumer()
-	eventConsumer.Consume(kafkaConsumer, eventHandler, reporterCli)
+	eventConsumer.Consume(kafkaConsumer, eventHandler, errorReporter)
 
 	shutdownGracefully := func() {
 

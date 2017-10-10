@@ -1,4 +1,4 @@
-// Copyright 2011 Aaron Jacobs. All Rights Reserved.
+// Copyright 2015 Aaron Jacobs. All Rights Reserved.
 // Author: aaronjjacobs@gmail.com (Aaron Jacobs)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,22 +15,23 @@
 
 package oglematchers
 
-// transformDescription returns a matcher that is equivalent to the supplied
-// one, except that it has the supplied description instead of the one attached
-// to the existing matcher.
-func transformDescription(m Matcher, newDesc string) Matcher {
-	return &transformDescriptionMatcher{newDesc, m}
-}
+import (
+	"fmt"
+	"reflect"
+)
 
-type transformDescriptionMatcher struct {
-	desc string
-	wrappedMatcher Matcher
-}
+// HasSameTypeAs returns a matcher that matches values with exactly the same
+// type as the supplied prototype.
+func HasSameTypeAs(p interface{}) Matcher {
+	expected := reflect.TypeOf(p)
+	pred := func(c interface{}) error {
+		actual := reflect.TypeOf(c)
+		if actual != expected {
+			return fmt.Errorf("which has type %v", actual)
+		}
 
-func (m *transformDescriptionMatcher) Description() string {
-	return m.desc
-}
+		return nil
+	}
 
-func (m *transformDescriptionMatcher) Matches(c interface{}) error {
-	return m.wrappedMatcher.Matches(c)
+	return NewMatcher(pred, fmt.Sprintf("has type %v", expected))
 }

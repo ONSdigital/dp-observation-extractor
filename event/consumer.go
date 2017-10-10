@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
+	"github.com/ONSdigital/dp-reporter-client/reporter"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 )
@@ -16,10 +17,6 @@ type MessageConsumer interface {
 // Handler represents a handler for processing a single event.
 type Handler interface {
 	Handle(event *DimensionsInserted) error
-}
-
-type Reporter interface {
-	ReportError(instanceID string, errContext string, err error, data log.Data) error
 }
 
 // Consumer consumes event messages.
@@ -37,7 +34,7 @@ func NewConsumer() *Consumer {
 }
 
 // Consume convert them to event instances, and pass the event to the provided handler.
-func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handler, reporter Reporter) {
+func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handler, errorReporter reporter.ErrorReporter) {
 
 	go func() {
 		defer close(consumer.closed)
@@ -58,8 +55,8 @@ func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handl
 				err = handler.Handle(event)
 				if err != nil {
 					log.ErrorC("failed to handle event", err, logData)
-					if err := reporter.ReportError(event.InstanceID, "failed to handle event", err, logData); err != nil {
-						log.ErrorC("reporter.Handle failed to handle error", err, logData)
+					if err := errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
+						log.ErrorC("errorReporter.Notify returned an unexpected error", err, logData)
 					}
 					continue
 				}
