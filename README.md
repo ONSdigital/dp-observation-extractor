@@ -23,6 +23,8 @@ dp-observation-extractor
 | FILE_CONSUMER_TOPIC        | "dimensions-inserted"   | The Kafka topic to consume file messages from
 | AWS_REGION                 | "eu-west-1"             | The AWS region to use
 | OBSERVATION_PRODUCER_TOPIC | "observation-extracted" | The Kafka topic to send the observation messages to
+| ERROR_PRODUCER_TOPIC       | "report-events"         | The kafka topic to send report event errors to
+| GRACEFUL_SHUTDOWN_TIMEOUT  | "5s"                    | The shutdown timeout in seconds
 
 ### Contributing
 
