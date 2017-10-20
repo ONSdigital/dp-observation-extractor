@@ -26,6 +26,7 @@ dp-observation-extractor
 | ERROR_PRODUCER_TOPIC       | "report-events"         | The kafka topic to send report event errors to
 | GRACEFUL_SHUTDOWN_TIMEOUT  | "5s"                    | The shutdown timeout in seconds
 
+
 ### Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.
