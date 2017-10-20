@@ -25,7 +25,7 @@ func Get() (*Config, error) {
 		KafkaAddr:                []string{"localhost:9092"},
 		FileConsumerGroup:        "dimensions-inserted",
 		FileConsumerTopic:        "dimensions-inserted",
-		ErrorProducerTopic:       "import-error",
+		ErrorProducerTopic:       "report-events",
 		AWSRegion:                "eu-west-1",
 		ObservationProducerTopic: "observation-extracted",
 		GracefulShutdownTimeout:  time.Second * 5,

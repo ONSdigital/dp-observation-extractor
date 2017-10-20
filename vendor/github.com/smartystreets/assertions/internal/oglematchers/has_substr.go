@@ -15,22 +15,32 @@
 
 package oglematchers
 
-// transformDescription returns a matcher that is equivalent to the supplied
-// one, except that it has the supplied description instead of the one attached
-// to the existing matcher.
-func transformDescription(m Matcher, newDesc string) Matcher {
-	return &transformDescriptionMatcher{newDesc, m}
+import (
+	"errors"
+	"fmt"
+	"reflect"
+	"strings"
+)
+
+// HasSubstr returns a matcher that matches strings containing s as a
+// substring.
+func HasSubstr(s string) Matcher {
+	return NewMatcher(
+		func(c interface{}) error { return hasSubstr(s, c) },
+		fmt.Sprintf("has substring \"%s\"", s))
 }
 
-type transformDescriptionMatcher struct {
-	desc string
-	wrappedMatcher Matcher
-}
+func hasSubstr(needle string, c interface{}) error {
+	v := reflect.ValueOf(c)
+	if v.Kind() != reflect.String {
+		return NewFatalError("which is not a string")
+	}
 
-func (m *transformDescriptionMatcher) Description() string {
-	return m.desc
-}
+	// Perform the substring search.
+	haystack := v.String()
+	if strings.Contains(haystack, needle) {
+		return nil
+	}
 
-func (m *transformDescriptionMatcher) Matches(c interface{}) error {
-	return m.wrappedMatcher.Matches(c)
+	return errors.New("")
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
+	"github.com/ONSdigital/dp-reporter-client/reporter"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
 )
@@ -33,7 +34,7 @@ func NewConsumer() *Consumer {
 }
 
 // Consume convert them to event instances, and pass the event to the provided handler.
-func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handler) {
+func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handler, errorReporter reporter.ErrorReporter) {
 
 	go func() {
 		defer close(consumer.closed)
@@ -48,17 +49,21 @@ func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handl
 					continue
 				}
 
-				log.Debug("event received", log.Data{"event": event})
+				logData := log.Data{"event": event}
+				log.Debug("event received", logData)
 
 				err = handler.Handle(event)
 				if err != nil {
-					log.Error(err, log.Data{"message": "failed to handle event"})
+					log.ErrorC("failed to handle event", err, logData)
+					if err := errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
+						log.ErrorC("errorReporter.Notify returned an unexpected error", err, logData)
+					}
 					continue
 				}
 
-				log.Debug("event processed - committing message", log.Data{"event": event})
+				log.Debug("event processed - committing message", logData)
 				message.Commit()
-				log.Debug("message committed", log.Data{"event": event})
+				log.Debug("message committed", logData)
 
 			case <-consumer.closing:
 				log.Info("closing event consumer loop", nil)
@@ -84,7 +89,7 @@ func (consumer *Consumer) Close(ctx context.Context) (err error) {
 		return nil
 	case <-ctx.Done():
 		log.Info("shutdown context time exceeded, skipping graceful shutdown of event consumer", nil)
-		return errors.New("Shutdown context timed out")
+		return errors.New("shutdown context timed out")
 	}
 }
 
