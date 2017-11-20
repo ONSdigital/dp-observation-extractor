@@ -15,7 +15,7 @@ var dimensionsInsertedEvent = `{
 }`
 
 // DimensionsInsertedEvent the Avro schema for dimensionsInsertedEvent messages.
-var DimensionsInsertedEvent *avro.Schema = &avro.Schema{
+var DimensionsInsertedEvent = &avro.Schema{
 	Definition: dimensionsInsertedEvent,
 }
 
@@ -24,11 +24,12 @@ var observationExtractedEvent = `{
   "name": "observation-extracted",
   "fields": [
     {"name": "instance_id", "type": "string"},
-    {"name": "row", "type": "string"}
+    {"name": "row", "type": "string"},
+    {"name": "row_index", "type": "long"}
   ]
 }`
 
 // ObservationExtractedEvent is the Avro schema for each observation extracted.
-var ObservationExtractedEvent *avro.Schema = &avro.Schema{
+var ObservationExtractedEvent = &avro.Schema{
 	Definition: observationExtractedEvent,
 }
