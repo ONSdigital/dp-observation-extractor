@@ -10,8 +10,8 @@ import (
 	"testing"
 )
 
-var exampleCsvHeader string = "observation,some,other,headers"
-var exampleCsvLine string = "153223,,Person,,Count,,,,,,,,,,K04000001,,,,,,,,,,,,,,,,,,,,,Sex,Sex,,All categories: Sex,All categories: Sex,,,,Age,Age,,All categories: Age 16 and over,All categories: Age 16 and over,,,,Residence Type,Residence Type,,All categories: Residence Type,All categories: Residence Type,,,"
+var exampleCsvHeader = "observation,some,other,headers"
+var exampleCsvLine = "153223,,Person,,Count,,,,,,,,,,K04000001,,,,,,,,,,,,,,,,,,,,,Sex,Sex,,All categories: Sex,All categories: Sex,,,,Age,Age,,All categories: Age 16 and over,All categories: Age 16 and over,,,,Residence Type,Residence Type,,All categories: Residence Type,All categories: Residence Type,,,"
 
 func TestEmptyInput(t *testing.T) {
 
@@ -55,9 +55,11 @@ func TestValidInput(t *testing.T) {
 
 				So(observation1, ShouldNotBeNil)
 				So(observation1.Row, ShouldEqual, exampleCsvLine)
+				So(observation1.RowIndex, ShouldEqual, 1)
 
 				So(observation2, ShouldNotBeNil)
 				So(observation2.Row, ShouldEqual, exampleCsvLine)
+				So(observation2.RowIndex, ShouldEqual, 2)
 
 				So(observation3, ShouldBeNil)
 			})
@@ -87,6 +89,7 @@ func TestDiscardHeaderRow(t *testing.T) {
 
 				So(observation1, ShouldNotBeNil)
 				So(observation1.Row, ShouldEqual, exampleCsvLine)
+				So(observation1.RowIndex, ShouldEqual, 1)
 
 				So(observation2, ShouldBeNil)
 			})
