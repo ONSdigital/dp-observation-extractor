@@ -18,7 +18,7 @@ dp-observation-extractor
 | Environment variable       | Default                 | Description
 | ---------------------------| ----------------------- | ----------------------------------------------------
 | BIND_ADDR                  | ":21600"                | The port to bind to
-| KAFKA_ADDRESS              | "http://localhost:9092" | The address of the Kafka instance
+| KAFKA_ADDR                 | "http://localhost:9092" | The address of the Kafka instance
 | FILE_CONSUMER_GROUP        | "dimensions-inserted"   | The Kafka consumer group to consume file messages from
 | FILE_CONSUMER_TOPIC        | "dimensions-inserted"   | The Kafka topic to consume file messages from
 | AWS_REGION                 | "eu-west-1"             | The AWS region to use
