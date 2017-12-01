@@ -32,6 +32,7 @@ func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) {
 		extractedEvent := ExtractedEvent{
 			InstanceID: instanceID,
 			Row:        observation.Row,
+			RowIndex:   observation.RowIndex,
 		}
 
 		bytes, err := schema.ObservationExtractedEvent.Marshal(extractedEvent)
