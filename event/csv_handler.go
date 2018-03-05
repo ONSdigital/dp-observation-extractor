@@ -1,28 +1,31 @@
 package event
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/go-ns/log"
-	"io"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 // CSVHandler handles events to extract observations from CSV files.
 type CSVHandler struct {
-	fileGetter        FileGetter
+	client            Client
 	observationWriter ObservationWriter
 }
 
 // NewCSVHandler returns a new CSVHandler instance that uses the given file.FileGetter and Output producer.
-func NewCSVHandler(fileGetter FileGetter, observationWriter ObservationWriter) *CSVHandler {
+func NewCSVHandler(client Client, observationWriter ObservationWriter) *CSVHandler {
 	return &CSVHandler{
 		observationWriter: observationWriter,
-		fileGetter:        fileGetter,
+		client:            client,
 	}
 }
 
-// FileGetter gets a file reader for the given URL.
-type FileGetter interface {
-	Get(url string) (io.ReadCloser, error)
+// Client gets an s3 object.
+type Client interface {
+	GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error)
 }
 
 // ObservationWriter provides operations for observation output.
@@ -32,23 +35,55 @@ type ObservationWriter interface {
 
 // Handle takes a single event, and returns the observations gathered from the URL in the event.
 func (handler CSVHandler) Handle(event *DimensionsInserted) error {
-
 	url := event.FileURL
 
-	log.Debug("getting file", log.Data{"url": url, "event": event})
-	readCloser, err := handler.fileGetter.Get(url)
+	logData := log.Data{"url": url, "event": event}
+	log.Debug("getting file", logData)
+
+	bucket, filename, err := GetBucketAndFilename(url)
 	if err != nil {
+		log.ErrorC("unable to find bucket and filename in event file url", err, logData)
 		return err
 	}
-	defer func(readCloser io.ReadCloser) {
-		closeErr := readCloser.Close()
-		if closeErr != nil {
-			log.Error(closeErr, nil)
-		}
-	}(readCloser)
 
-	observationReader := observation.NewCSVReader(readCloser)
+	logData["bucket"] = bucket
+	logData["filename"] = filename
+
+	getInput := &s3.GetObjectInput{
+		Bucket: &bucket,
+		Key:    &filename,
+	}
+
+	output, err := handler.client.GetObject(getInput)
+	if err != nil {
+		log.ErrorC("unable to retrieve s3 output object", err, logData)
+		return err
+	}
+
+	file := output.Body
+	defer output.Body.Close()
+
+	observationReader := observation.NewCSVReader(file)
 
 	handler.observationWriter.WriteAll(observationReader, event.InstanceID)
 	return nil
+}
+
+// GetBucketAndFilename finds the bucket and filename in url
+func GetBucketAndFilename(s3URL string) (string, string, error) {
+	urlSplitz := strings.Split(s3URL, "/")
+	n := len(urlSplitz)
+	if n < 3 {
+		return "", "", errors.New("could not find bucket or filename in file url")
+	}
+	bucket := urlSplitz[n-2]
+	filename := urlSplitz[n-1]
+	if filename == "" {
+		return "", "", errors.New("missing filename in file url")
+	}
+	if bucket == "" {
+		return "", "", errors.New("missing bucket name in file url")
+	}
+
+	return bucket, filename, nil
 }

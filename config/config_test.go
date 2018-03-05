@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	. "github.com/smartystreets/goconvey/convey"
@@ -20,11 +21,15 @@ func TestSpec(t *testing.T) {
 			})
 
 			Convey("The values should be set to the expected defaults", func() {
+				So(cfg.AWSPrivateKey, ShouldEqual, "")
+				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")
 				So(cfg.BindAddr, ShouldEqual, ":21600")
-				So(cfg.KafkaAddr, ShouldResemble, []string{"localhost:9092"})
+				So(cfg.EncryptionDisabled, ShouldEqual, true)
+				So(cfg.ErrorProducerTopic, ShouldEqual, "report-events")
 				So(cfg.FileConsumerGroup, ShouldEqual, "dimensions-inserted")
 				So(cfg.FileConsumerTopic, ShouldEqual, "dimensions-inserted")
-				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")
+				So(cfg.GracefulShutdownTimeout, ShouldEqual, time.Second*5)
+				So(cfg.KafkaAddr, ShouldResemble, []string{"localhost:9092"})
 				So(cfg.ObservationProducerTopic, ShouldEqual, "observation-extracted")
 			})
 		})

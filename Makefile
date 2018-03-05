@@ -10,8 +10,13 @@ export GOARCH?=$(shell go env GOARCH)
 build:
 	@mkdir -p $(BUILD_ARCH)/$(BIN_DIR)
 	go build -o $(BUILD_ARCH)/$(BIN_DIR)/dp-observation-extractor cmd/dp-observation-extractor/main.go
+
 debug: build
 	HUMAN_LOG=1 go run cmd/dp-observation-extractor/main.go
+
+acceptance:
+	ENCRYPTION_DISABLED=false HUMAN_LOG=1 go run main.go
+
 test:
 	go test -cover $(shell go list ./... | grep -v /vendor/)
 .PHONY: build debug test
