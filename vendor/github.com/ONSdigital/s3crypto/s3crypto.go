@@ -25,6 +25,9 @@ const encryptionKeyHeader = "Pskencrypted"
 // ErrNoPrivateKey is returned when an attempt is made to access a method that requires a private key when it has not been provided
 var ErrNoPrivateKey = errors.New("you have not provided a private key and therefore do not have permission to complete this action")
 
+// ErrNoMetadataPSK is returned when the file you are trying to download is not encrypted
+var ErrNoMetadataPSK = errors.New("no encrypted key found for this file, you are trying to download a file which is not encrypted")
+
 // Config represents the configuration items for the
 // CryptoClient
 type Config struct {
@@ -61,6 +64,7 @@ func New(sess *session.Session, cfg *Config) *CryptoClient {
 // object, as well as temporarily being stored as its own object while the Multipart
 // upload is being updated.
 func (c *CryptoClient) CreateMultipartUploadRequest(input *s3.CreateMultipartUploadInput) (req *request.Request, out *s3.CreateMultipartUploadOutput) {
+	req = new(request.Request)
 	if !c.hasUserDefinedPSK {
 		psk := createPSK()
 
@@ -101,6 +105,7 @@ func (c *CryptoClient) CreateMultipartUploadWithContext(ctx aws.Context, input *
 // object, decrypting the PSK using the private key, before stream encoding the content
 // for the particular part
 func (c *CryptoClient) UploadPartRequest(input *s3.UploadPartInput) (req *request.Request, out *s3.UploadPartOutput) {
+	req = new(request.Request)
 	ekStr, err := c.getEncryptedKey(input)
 	if err != nil {
 		req.Error = err
@@ -127,6 +132,7 @@ func (c *CryptoClient) UploadPartRequest(input *s3.UploadPartInput) (req *reques
 // UploadPartRequestWithPSK wraps the SDK method encrypting the part contents with a user defined
 // PSK
 func (c *CryptoClient) UploadPartRequestWithPSK(input *s3.UploadPartInput, psk []byte) (req *request.Request, out *s3.UploadPartOutput) {
+	req = new(request.Request)
 	encryptedContent, err := encryptObjectContent(psk, input.Body)
 	if err != nil {
 		req.Error = err
@@ -171,6 +177,7 @@ func (c *CryptoClient) UploadPartWithContextWithPSK(ctx aws.Context, input *s3.U
 // PutObjectRequest wraps the SDK method by creating a PSK, encrypting it using the public key,
 // and encrypting the object content using the PSK
 func (c *CryptoClient) PutObjectRequest(input *s3.PutObjectInput) (req *request.Request, out *s3.PutObjectOutput) {
+	req = new(request.Request)
 	psk := createPSK()
 
 	ekStr, err := c.encryptKey(psk)
@@ -195,6 +202,7 @@ func (c *CryptoClient) PutObjectRequest(input *s3.PutObjectInput) (req *request.
 
 // PutObjectRequestWithPSK wraps the SDK method by encrypting the object content with a user defined PSK
 func (c *CryptoClient) PutObjectRequestWithPSK(input *s3.PutObjectInput, psk []byte) (req *request.Request, out *s3.PutObjectOutput) {
+	req = new(request.Request)
 	encryptedContent, err := encryptObjectContent(psk, input.Body)
 	if err != nil {
 		req.Error = err
@@ -239,6 +247,12 @@ func (c *CryptoClient) GetObjectRequest(input *s3.GetObjectInput) (req *request.
 	}
 
 	ekStr := out.Metadata[encryptionKeyHeader]
+
+	if ekStr == nil {
+		req.Error = ErrNoMetadataPSK
+		return
+	}
+
 	psk, err := c.decryptKey(*ekStr)
 	if err != nil {
 		req.Error = err
@@ -280,13 +294,13 @@ func (c *CryptoClient) GetObjectRequestWithPSK(input *s3.GetObjectInput, psk []b
 // GetObject is a wrapper for GetObjectRequest
 func (c *CryptoClient) GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 	req, out := c.GetObjectRequest(input)
-	return out, req.Send()
+	return out, req.Error
 }
 
 // GetObjectWithPSK is a wrapper for GetObjectRequestWithPSK
 func (c *CryptoClient) GetObjectWithPSK(input *s3.GetObjectInput, psk []byte) (*s3.GetObjectOutput, error) {
 	req, out := c.GetObjectRequestWithPSK(input, psk)
-	return out, req.Send()
+	return out, req.Error
 }
 
 // GetObjectWithContext is a wrapper for GetObjectRequest with
@@ -295,7 +309,7 @@ func (c *CryptoClient) GetObjectWithContext(ctx aws.Context, input *s3.GetObject
 	req, out := c.GetObjectRequest(input)
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
-	return out, req.Send()
+	return out, req.Error
 }
 
 // GetObjectWithContextWithPSK is a wrapper for GetObjectRequestWithPSK with
@@ -304,12 +318,13 @@ func (c *CryptoClient) GetObjectWithContextWithPSK(ctx aws.Context, input *s3.Ge
 	req, out := c.GetObjectRequestWithPSK(input, psk)
 	req.SetContext(ctx)
 	req.ApplyOptions(opts...)
-	return out, req.Send()
+	return out, req.Error
 }
 
 // CompleteMultipartUploadRequest wraps the SDK method by removing the temporarily stored encrypted
 // PSK object.
 func (c *CryptoClient) CompleteMultipartUploadRequest(input *s3.CompleteMultipartUploadInput) (req *request.Request, out *s3.CompleteMultipartUploadOutput) {
+	req = new(request.Request)
 	if !c.hasUserDefinedPSK {
 		if err := c.removeEncryptedKey(input); err != nil {
 			req.Error = err

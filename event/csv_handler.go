@@ -70,6 +70,8 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 }
 
 // GetBucketAndFilename finds the bucket and filename in url
+// FIXME GetBucketAndFilename will fail to retrieve correct file location if folder
+// structure is to be introduced in s3 bucket
 func GetBucketAndFilename(s3URL string) (string, string, error) {
 	urlSplitz := strings.Split(s3URL, "/")
 	n := len(urlSplitz)
