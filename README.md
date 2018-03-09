@@ -10,21 +10,23 @@ dp-observation-extractor
 * Run the application `make debug`
 
 #### Running in isolation
-* run kafka consumer / producer apps 
+* run kafka consumer / producer apps
 * run local S3 store?
 
 ### Configuration
 
 | Environment variable       | Default                 | Description
 | ---------------------------| ----------------------- | ----------------------------------------------------
+| AWS_REGION                 | "eu-west-1"             | The AWS region to use
 | BIND_ADDR                  | ":21600"                | The port to bind to
-| KAFKA_ADDR                 | "http://localhost:9092" | The address of the Kafka instance
+| ENCRYPTION_DISABLED        | true                    | A boolean flag to identify if encryption of files is disabled or not
+| ERROR_PRODUCER_TOPIC       | "report-events"         | The Kafka topic to send report event errors to
 | FILE_CONSUMER_GROUP        | "dimensions-inserted"   | The Kafka consumer group to consume file messages from
 | FILE_CONSUMER_TOPIC        | "dimensions-inserted"   | The Kafka topic to consume file messages from
-| AWS_REGION                 | "eu-west-1"             | The AWS region to use
-| OBSERVATION_PRODUCER_TOPIC | "observation-extracted" | The Kafka topic to send the observation messages to
-| ERROR_PRODUCER_TOPIC       | "report-events"         | The kafka topic to send report event errors to
 | GRACEFUL_SHUTDOWN_TIMEOUT  | "5s"                    | The shutdown timeout in seconds
+| KAFKA_ADDR                 | "http://localhost:9092" | The address of the Kafka instance
+| OBSERVATION_PRODUCER_TOPIC | "observation-extracted" | The Kafka topic to send the observation messages to
+| RSA_PRIVATE_KEY            | none                    | The RSA private key to use to encrypt or decrypt files from AWS
 
 
 ### Contributing

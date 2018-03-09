@@ -2,6 +2,7 @@ package event_test
 
 import (
 	"context"
+
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/event/eventtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
@@ -10,10 +11,11 @@ import (
 	"github.com/ONSdigital/go-ns/log"
 
 	"errors"
-	"github.com/ONSdigital/dp-reporter-client/reporter/reportertest"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
+
+	"github.com/ONSdigital/dp-reporter-client/reporter/reportertest"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestConsume_UnmarshallError(t *testing.T) {
@@ -191,7 +193,7 @@ func marshal(event event.DimensionsInserted) []byte {
 func getExampleEvent() *event.DimensionsInserted {
 	expectedEvent := &event.DimensionsInserted{
 		InstanceID: "1234",
-		FileURL:    "s3://some-file",
+		FileURL:    "s3://some-bucket/some-file",
 	}
 	return expectedEvent
 }

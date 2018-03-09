@@ -2,7 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
@@ -10,12 +17,12 @@ import (
 	"github.com/ONSdigital/go-ns/handlers/healthcheck"
 	"github.com/ONSdigital/go-ns/kafka"
 	"github.com/ONSdigital/go-ns/log"
-	"github.com/ONSdigital/go-ns/s3"
 	"github.com/ONSdigital/go-ns/server"
+	"github.com/ONSdigital/s3crypto"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gorilla/mux"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -27,7 +34,15 @@ func main() {
 		log.Error(err, nil)
 		os.Exit(1)
 	}
-	log.Debug("loaded config", log.Data{"config": config})
+
+	// sensitive fields are omitted from config.String().
+	log.Info("config on startup", log.Data{"config": config})
+
+	var privateKey *rsa.PrivateKey
+	if !config.EncryptionDisabled {
+		privateKey, err = getPrivateKey([]byte(config.AWSPrivateKey))
+		checkForError(err)
+	}
 
 	// a channel used to signal a graceful exit is required.
 	errorChannel := make(chan error)
@@ -43,12 +58,12 @@ func main() {
 
 	go func() {
 		log.Debug("starting http server", log.Data{"bind_addr": config.BindAddr})
-		if err := httpServer.ListenAndServe(); err != nil {
+		if err = httpServer.ListenAndServe(); err != nil {
 			errorChannel <- err
 		}
 	}()
 
-	s3, err := s3.New(config.AWSRegion)
+	sess, err := session.NewSession(&aws.Config{Region: &config.AWSRegion})
 	checkForError(err)
 
 	kafkaConsumer, err := kafka.NewConsumerGroup(config.KafkaAddr,
@@ -64,7 +79,15 @@ func main() {
 	checkForError(err)
 
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
-	eventHandler := event.NewCSVHandler(s3, observationWriter)
+
+	var eventHandler *event.CSVHandler
+	if !config.EncryptionDisabled {
+		client := s3crypto.New(sess, &s3crypto.Config{PrivateKey: privateKey})
+		eventHandler = event.NewCSVHandler(client, observationWriter)
+	} else {
+		client := s3.New(sess)
+		eventHandler = event.NewCSVHandler(client, observationWriter)
+	}
 
 	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
 	checkForError(err)
@@ -131,6 +154,15 @@ func main() {
 			shutdownGracefully()
 		}
 	}
+}
+
+func getPrivateKey(keyBytes []byte) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode(keyBytes)
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		return nil, errors.New("invalid RSA PRIVATE KEY provided")
+	}
+
+	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
 
 func checkForError(err error) {

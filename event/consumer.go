@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"errors"
+
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/dp-reporter-client/reporter"
 	"github.com/ONSdigital/go-ns/kafka"
@@ -55,7 +56,7 @@ func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handl
 				err = handler.Handle(event)
 				if err != nil {
 					log.ErrorC("failed to handle event", err, logData)
-					if err := errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
+					if err = errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
 						log.ErrorC("errorReporter.Notify returned an unexpected error", err, logData)
 					}
 					continue
