@@ -9,7 +9,6 @@ import (
 
 // Config values for the application.
 type Config struct {
-	AWSPrivateKey            string        `envconfig:"RSA_PRIVATE_KEY"               json:"-"`
 	AWSRegion                string        `envconfig:"AWS_REGION"`
 	BindAddr                 string        `envconfig:"BIND_ADDR"`
 	EncryptionDisabled       bool          `envconfig:"ENCRYPTION_DISABLED"`
@@ -19,6 +18,9 @@ type Config struct {
 	GracefulShutdownTimeout  time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	KafkaAddr                []string      `envconfig:"KAFKA_ADDR"                    json:"-"`
 	ObservationProducerTopic string        `envconfig:"OBSERVATION_PRODUCER_TOPIC"`
+	VaultAddr                string        `envconfig:"VAULT_ADDR"`
+	VaultToken               string        `envconfig:"VAULT_TOKEN"                   json:"-"`
+	VaultPath                string        `envconfig:"VAULT_PATH"`
 }
 
 // Get the configuration values from the environment or provide the defaults.
@@ -34,6 +36,9 @@ func Get() (*Config, error) {
 		GracefulShutdownTimeout:  time.Second * 5,
 		KafkaAddr:                []string{"localhost:9092"},
 		ObservationProducerTopic: "observation-extracted",
+		VaultAddr:                "http://localhost:8200",
+		VaultToken:               "",
+		VaultPath:                "secret/shared/psk",
 	}
 
 	return cfg, envconfig.Process("", cfg)

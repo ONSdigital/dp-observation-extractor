@@ -34,7 +34,7 @@ func TestSuccessfullyHandleCSV(t *testing.T) {
 	Convey("Given a valid event message", t, func() {
 		Convey("When handle method is called with event", func() {
 			Convey("Then successfully return without an error", func() {
-				client := mocks.NewMockS3API(mockCtrl)
+				client := mocks.NewMockSDKClient(mockCtrl)
 				observationWriterStub := &eventtest.ObservationWriter{}
 
 				s3GetOutput := &s3.GetObjectOutput{
@@ -43,7 +43,32 @@ func TestSuccessfullyHandleCSV(t *testing.T) {
 
 				client.EXPECT().GetObject(getInput).Return(s3GetOutput, nil)
 
-				csvHandler := event.NewCSVHandler(client, observationWriterStub)
+				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
+
+				err := csvHandler.Handle(getExampleEvent())
+
+				So(err, ShouldBeNil)
+			})
+		})
+
+		Convey("When handle method is called with event, and encryption is enabled", func() {
+			Convey("Then successfully return without an error", func() {
+				client := mocks.NewMockCryptoClient(mockCtrl)
+				vaultClient := mocks.NewMockVaultClient(mockCtrl)
+				observationWriterStub := &eventtest.ObservationWriter{}
+				encodedPSK := "48656C6C6F20576F726C64"
+				psk := []byte("Hello World")
+				path := "test-path"
+
+				vaultClient.EXPECT().ReadKey(path, filename).Return(encodedPSK, nil)
+
+				s3GetOutput := &s3.GetObjectOutput{
+					Body: ioutil.NopCloser(strings.NewReader(exampleHeader + "\n" + exampleCsvLine)),
+				}
+
+				client.EXPECT().GetObjectWithPSK(getInput, psk).Return(s3GetOutput, nil)
+
+				csvHandler := event.NewCSVHandler(nil, client, vaultClient, observationWriterStub, path)
 
 				err := csvHandler.Handle(getExampleEvent())
 
@@ -61,10 +86,10 @@ func TestFailToHandleCSV(t *testing.T) {
 	Convey("Given an event is missing a file URL", t, func() {
 		Convey("When handle method is called with event", func() {
 			Convey("Then error returns with a message 'could not find bucket or filename in file url'", func() {
-				client := mocks.NewMockS3API(mockCtrl)
+				client := mocks.NewMockSDKClient(mockCtrl)
 				observationWriterStub := &eventtest.ObservationWriter{}
 
-				csvHandler := event.NewCSVHandler(client, observationWriterStub)
+				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 
 				err := csvHandler.Handle(&event.DimensionsInserted{
 					InstanceID: "1234",
@@ -80,11 +105,10 @@ func TestFailToHandleCSV(t *testing.T) {
 	Convey("Given an event is missing the filename in file URL", t, func() {
 		Convey("When handle method is called with event", func() {
 			Convey("Then error returns with a message 'missing filename in file url'", func() {
-				client := mocks.NewMockS3API(mockCtrl)
+				client := mocks.NewMockSDKClient(mockCtrl)
 				observationWriterStub := &eventtest.ObservationWriter{}
 
-				csvHandler := event.NewCSVHandler(client, observationWriterStub)
-
+				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 				err := csvHandler.Handle(&event.DimensionsInserted{
 					InstanceID: "1234",
 					FileURL:    "s3://",
@@ -96,13 +120,76 @@ func TestFailToHandleCSV(t *testing.T) {
 		})
 	})
 
+	Convey("Given a handler with an erroring vault client", t, func() {
+		Convey("When handle method is called with a valid event", func() {
+			Convey("Then the correct error is returned", func() {
+				vaultClient := mocks.NewMockVaultClient(mockCtrl)
+				path := "test-path"
+				testErr := errors.New("vault client error")
+
+				vaultClient.EXPECT().ReadKey(path, filename).Return("", testErr)
+
+				csvHandler := event.NewCSVHandler(nil, nil, vaultClient, nil, path)
+
+				err := csvHandler.Handle(getExampleEvent())
+
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "vault client error")
+			})
+		})
+	})
+
+	Convey("Given a handler with an vault client that returns an invalid psk", t, func() {
+		Convey("When handle method is called with a valid event", func() {
+			Convey("Then the correct error is returned", func() {
+				vaultClient := mocks.NewMockVaultClient(mockCtrl)
+				path := "test-path"
+				invalidPSK := "this-is-not-hex-encoded"
+
+				vaultClient.EXPECT().ReadKey(path, filename).Return(invalidPSK, nil)
+
+				csvHandler := event.NewCSVHandler(nil, nil, vaultClient, nil, path)
+
+				err := csvHandler.Handle(getExampleEvent())
+
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "encoding/hex: invalid byte: U+0074 't'")
+			})
+		})
+	})
+
+	Convey("Given a handler with a crypto client that returns an error", t, func() {
+		Convey("When handle method is called with a valid event", func() {
+			Convey("Then the correct error is returned", func() {
+				client := mocks.NewMockCryptoClient(mockCtrl)
+				vaultClient := mocks.NewMockVaultClient(mockCtrl)
+				observationWriterStub := &eventtest.ObservationWriter{}
+				encodedPSK := "48656C6C6F20576F726C64"
+				psk := []byte("Hello World")
+				path := "test-path"
+				testErr := errors.New("crypto client error")
+
+				vaultClient.EXPECT().ReadKey(path, filename).Return(encodedPSK, nil)
+
+				client.EXPECT().GetObjectWithPSK(getInput, psk).Return(nil, testErr)
+
+				csvHandler := event.NewCSVHandler(nil, client, vaultClient, observationWriterStub, path)
+
+				err := csvHandler.Handle(getExampleEvent())
+
+				So(err, ShouldNotBeNil)
+				So(err.Error(), ShouldEqual, "crypto client error")
+			})
+		})
+	})
+
 	Convey("Given an event is missing the bucket name in file URL", t, func() {
 		Convey("When handle method is called with event", func() {
 			Convey("Then error returns with a message 'missing bucket name in file url'", func() {
-				client := mocks.NewMockS3API(mockCtrl)
+				client := mocks.NewMockSDKClient(mockCtrl)
 				observationWriterStub := &eventtest.ObservationWriter{}
 
-				csvHandler := event.NewCSVHandler(client, observationWriterStub)
+				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 
 				err := csvHandler.Handle(&event.DimensionsInserted{
 					InstanceID: "1234",
@@ -118,11 +205,11 @@ func TestFailToHandleCSV(t *testing.T) {
 	Convey("Given the event message contains an invalid file url", t, func() {
 		Convey("When handle method is called with event", func() {
 			Convey("Then error returns with a message 'EOF'", func() {
-				client := mocks.NewMockS3API(mockCtrl)
+				client := mocks.NewMockSDKClient(mockCtrl)
 				observationWriterStub := &eventtest.ObservationWriter{}
 				client.EXPECT().GetObject(getInput).Return(nil, io.EOF)
 
-				csvHandler := event.NewCSVHandler(client, observationWriterStub)
+				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 
 				err := csvHandler.Handle(getExampleEvent())
 

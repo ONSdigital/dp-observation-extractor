@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/hex"
 	"errors"
 	"strings"
 
@@ -12,20 +13,47 @@ import (
 // CSVHandler handles events to extract observations from CSV files.
 type CSVHandler struct {
 	client            Client
+	vaultClient       VaultClient
 	observationWriter ObservationWriter
+
+	vaultPath string
 }
 
 // NewCSVHandler returns a new CSVHandler instance that uses the given file.FileGetter and Output producer.
-func NewCSVHandler(client Client, observationWriter ObservationWriter) *CSVHandler {
+func NewCSVHandler(sdkCli SDKClient, cryptoCli CryptoClient, vaultClient VaultClient, observationWriter ObservationWriter, vaultPath string) *CSVHandler {
 	return &CSVHandler{
 		observationWriter: observationWriter,
-		client:            client,
+		client:            client{SDKClient: sdkCli, CryptoClient: cryptoCli},
+		vaultClient:       vaultClient,
+		vaultPath:         vaultPath,
 	}
 }
 
-// Client gets an s3 object.
+// Client implements SDKClient and CryptoClient.
 type Client interface {
+	SDKClient
+	CryptoClient
+}
+
+// VaultClient is an interface to represent methods called to action upon vault
+type VaultClient interface {
+	ReadKey(path, key string) (string, error)
+}
+
+// client implements the Client interface.
+type client struct {
+	SDKClient
+	CryptoClient
+}
+
+// SDKClient retrieves an object from s3.
+type SDKClient interface {
 	GetObject(input *s3.GetObjectInput) (*s3.GetObjectOutput, error)
+}
+
+// CryptoClient retrieves an object from s3 that is encrypted.
+type CryptoClient interface {
+	GetObjectWithPSK(input *s3.GetObjectInput, psk []byte) (*s3.GetObjectOutput, error)
 }
 
 // ObservationWriter provides operations for observation output.
@@ -54,10 +82,28 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 		Key:    &filename,
 	}
 
-	output, err := handler.client.GetObject(getInput)
-	if err != nil {
-		log.ErrorC("unable to retrieve s3 output object", err, logData)
-		return err
+	var output *s3.GetObjectOutput
+	if handler.vaultClient != nil {
+		pskStr, err := handler.vaultClient.ReadKey(handler.vaultPath, filename)
+		if err != nil {
+			return err
+		}
+		psk, err := hex.DecodeString(pskStr)
+		if err != nil {
+			return err
+		}
+
+		output, err = handler.client.GetObjectWithPSK(getInput, psk)
+		if err != nil {
+			log.ErrorC("encountered error retrieving and decrypting csv file", err, logData)
+			return err
+		}
+	} else {
+		output, err = handler.client.GetObject(getInput)
+		if err != nil {
+			log.ErrorC("unable to retrieve s3 output object", err, logData)
+			return err
+		}
 	}
 
 	file := output.Body
