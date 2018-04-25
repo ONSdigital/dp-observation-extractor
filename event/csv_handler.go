@@ -84,7 +84,11 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 
 	var output *s3.GetObjectOutput
 	if handler.vaultClient != nil {
-		pskStr, err := handler.vaultClient.ReadKey(handler.vaultPath, filename)
+
+		vaultPath := handler.vaultPath + "/" + filename
+		vaultKey := "key"
+
+		pskStr, err := handler.vaultClient.ReadKey(vaultPath, vaultKey)
 		if err != nil {
 			return err
 		}

@@ -60,7 +60,7 @@ func TestSuccessfullyHandleCSV(t *testing.T) {
 				psk := []byte("Hello World")
 				path := "test-path"
 
-				vaultClient.EXPECT().ReadKey(path, filename).Return(encodedPSK, nil)
+				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return(encodedPSK, nil)
 
 				s3GetOutput := &s3.GetObjectOutput{
 					Body: ioutil.NopCloser(strings.NewReader(exampleHeader + "\n" + exampleCsvLine)),
@@ -127,7 +127,7 @@ func TestFailToHandleCSV(t *testing.T) {
 				path := "test-path"
 				testErr := errors.New("vault client error")
 
-				vaultClient.EXPECT().ReadKey(path, filename).Return("", testErr)
+				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return("", testErr)
 
 				csvHandler := event.NewCSVHandler(nil, nil, vaultClient, nil, path)
 
@@ -146,7 +146,7 @@ func TestFailToHandleCSV(t *testing.T) {
 				path := "test-path"
 				invalidPSK := "this-is-not-hex-encoded"
 
-				vaultClient.EXPECT().ReadKey(path, filename).Return(invalidPSK, nil)
+				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return(invalidPSK, nil)
 
 				csvHandler := event.NewCSVHandler(nil, nil, vaultClient, nil, path)
 
@@ -169,7 +169,7 @@ func TestFailToHandleCSV(t *testing.T) {
 				path := "test-path"
 				testErr := errors.New("crypto client error")
 
-				vaultClient.EXPECT().ReadKey(path, filename).Return(encodedPSK, nil)
+				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return(encodedPSK, nil)
 
 				client.EXPECT().GetObjectWithPSK(getInput, psk).Return(nil, testErr)
 
