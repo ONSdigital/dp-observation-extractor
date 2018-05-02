@@ -23,7 +23,7 @@ func TestSpec(t *testing.T) {
 			Convey("The values should be set to the expected defaults", func() {
 				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")
 				So(cfg.BindAddr, ShouldEqual, ":21600")
-				So(cfg.EncryptionDisabled, ShouldEqual, true)
+				So(cfg.EncryptionDisabled, ShouldEqual, false)
 				So(cfg.ErrorProducerTopic, ShouldEqual, "report-events")
 				So(cfg.FileConsumerGroup, ShouldEqual, "dimensions-inserted")
 				So(cfg.FileConsumerTopic, ShouldEqual, "dimensions-inserted")
