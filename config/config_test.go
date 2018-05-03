@@ -21,7 +21,6 @@ func TestSpec(t *testing.T) {
 			})
 
 			Convey("The values should be set to the expected defaults", func() {
-				So(cfg.AWSPrivateKey, ShouldEqual, "")
 				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")
 				So(cfg.BindAddr, ShouldEqual, ":21600")
 				So(cfg.EncryptionDisabled, ShouldEqual, true)
@@ -31,6 +30,9 @@ func TestSpec(t *testing.T) {
 				So(cfg.GracefulShutdownTimeout, ShouldEqual, time.Second*5)
 				So(cfg.KafkaAddr, ShouldResemble, []string{"localhost:9092"})
 				So(cfg.ObservationProducerTopic, ShouldEqual, "observation-extracted")
+				So(cfg.VaultAddr, ShouldEqual, "http://localhost:8200")
+				So(cfg.VaultPath, ShouldEqual, "secret/shared/psk")
+				So(cfg.VaultToken, ShouldEqual, "")
 			})
 		})
 	})

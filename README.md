@@ -6,6 +6,11 @@ dp-observation-extractor
 
 ### Getting started
 
+You may want vault to run this service:
+
+- Run `brew install vault`
+- Run `vault server -dev`
+
 * Clone the repo `go get github.com/ONSdigital/dp-csv-splitter`
 * Run the application `make debug`
 
@@ -26,7 +31,9 @@ dp-observation-extractor
 | GRACEFUL_SHUTDOWN_TIMEOUT  | "5s"                    | The shutdown timeout in seconds
 | KAFKA_ADDR                 | "http://localhost:9092" | The address of the Kafka instance
 | OBSERVATION_PRODUCER_TOPIC | "observation-extracted" | The Kafka topic to send the observation messages to
-| RSA_PRIVATE_KEY            | none                    | The RSA private key to use to encrypt or decrypt files from AWS
+| VAULT_ADDR                 | http://localhost:8200   | The vault address
+| VAULT_TOKEN                | -                       | Vault token required for the client to talk to vault. (Use `make debug` to create a vault token)
+| VAULT_PATH                 | secret/shared/psk       | The path where the psks will be stored in for vault
 
 
 ### Contributing
