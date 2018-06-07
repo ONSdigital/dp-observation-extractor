@@ -29,7 +29,7 @@ func Get() (*Config, error) {
 	cfg := &Config{
 		AWSRegion:                "eu-west-1",
 		BindAddr:                 ":21600",
-		EncryptionDisabled:       true,
+		EncryptionDisabled:       false,
 		ErrorProducerTopic:       "report-events",
 		FileConsumerGroup:        "dimensions-inserted",
 		FileConsumerTopic:        "dimensions-inserted",

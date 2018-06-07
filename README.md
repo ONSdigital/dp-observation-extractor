@@ -34,6 +34,8 @@ You may want vault to run this service:
 | VAULT_ADDR                 | http://localhost:8200   | The vault address
 | VAULT_TOKEN                | -                       | Vault token required for the client to talk to vault. (Use `make debug` to create a vault token)
 | VAULT_PATH                 | secret/shared/psk       | The path where the psks will be stored in for vault
+| AWS_ACCESS_KEY_ID          | -                       | The AWS access key credential for the observation extractor
+| AWS_SECRET_ACCESS_KEY      | -                       | The AWS secret key credential for the observation extractor
 
 
 ### Contributing
