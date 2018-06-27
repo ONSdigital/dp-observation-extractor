@@ -23,6 +23,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const chunkSize = 5 * 1024 * 1024
+
 func main() {
 
 	log.Namespace = "dp-observation-extractor"
@@ -75,7 +77,7 @@ func main() {
 	var cryptoClient event.CryptoClient
 	var vaultClient event.VaultClient
 	if !config.EncryptionDisabled {
-		cryptoClient = s3crypto.New(sess, &s3crypto.Config{HasUserDefinedPSK: true})
+		cryptoClient = s3crypto.New(sess, &s3crypto.Config{HasUserDefinedPSK: true, MultipartChunkSize: chunkSize})
 		vaultClient, err = vault.CreateVaultClient(config.VaultToken, config.VaultAddr, 3)
 		checkForError(err)
 	}
