@@ -53,8 +53,7 @@ func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handl
 				logData := log.Data{"event": event}
 				log.Debug("event received", logData)
 
-				err = handler.Handle(event)
-				if err != nil {
+				if err = handler.Handle(event); err != nil {
 					log.ErrorC("failed to handle event", err, logData)
 					if err = errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
 						log.ErrorC("errorReporter.Notify returned an unexpected error", err, logData)
