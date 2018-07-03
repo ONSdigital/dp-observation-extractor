@@ -3,6 +3,7 @@ package event
 import (
 	"encoding/hex"
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/ONSdigital/dp-observation-extractor/observation"
@@ -112,6 +113,9 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 
 	file := output.Body
 	defer output.Body.Close()
+
+	logData["content_length"] = strconv.FormatInt(*output.ContentLength, 10)
+	log.Info("file read from s3", logData)
 
 	observationReader := observation.NewCSVReader(file)
 
