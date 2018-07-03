@@ -114,7 +114,7 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 	file := output.Body
 	defer output.Body.Close()
 
-	logData = logContentLength(logData, output.ContentLength)
+	logData["content_length"] = getContentLength(output)
 	log.Info("file read from s3", logData)
 
 	observationReader := observation.NewCSVReader(file)
@@ -144,11 +144,11 @@ func GetBucketAndFilename(s3URL string) (string, string, error) {
 	return bucket, filename, nil
 }
 
-func logContentLength(d log.Data, i *int64) log.Data {
-	d["content_length"] = "0"
-	if i != nil {
-		d["content_length"] = strconv.FormatInt(*i, 10)
+func getContentLength(output *s3.GetObjectOutput) string {
+	if output.ContentLength == nil {
+		return "0"
 	}
 
-	return d
+	return strconv.FormatInt(*output.ContentLength, 10)
+
 }
