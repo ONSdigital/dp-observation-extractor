@@ -3,6 +3,7 @@ package event
 import (
 	"encoding/hex"
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/ONSdigital/dp-observation-extractor/observation"
@@ -87,28 +88,37 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 
 		vaultPath := handler.vaultPath + "/" + filename
 		vaultKey := "key"
+		logData["vault_path"] = vaultPath
 
+		log.Debug("attempting to get psk from vault", logData)
 		pskStr, err := handler.vaultClient.ReadKey(vaultPath, vaultKey)
 		if err != nil {
 			return err
 		}
+
+		log.Debug("got psk", logData)
 		psk, err := hex.DecodeString(pskStr)
 		if err != nil {
 			return err
 		}
 
+		log.Debug("attempting to get S3 object with psk", logData)
 		output, err = handler.client.GetObjectWithPSK(getInput, psk)
 		if err != nil {
 			log.ErrorC("encountered error retrieving and decrypting csv file", err, logData)
 			return err
 		}
 	} else {
+		log.Debug("attempting to get S3 object", logData)
 		output, err = handler.client.GetObject(getInput)
 		if err != nil {
 			log.ErrorC("unable to retrieve s3 output object", err, logData)
 			return err
 		}
 	}
+
+	logData["content_length"] = getContentLength(output)
+	log.Info("file read from s3", logData)
 
 	file := output.Body
 	defer output.Body.Close()
@@ -138,4 +148,13 @@ func GetBucketAndFilename(s3URL string) (string, string, error) {
 	}
 
 	return bucket, filename, nil
+}
+
+func getContentLength(output *s3.GetObjectOutput) string {
+	if output.ContentLength == nil {
+		return "0"
+	}
+
+	return strconv.FormatInt(*output.ContentLength, 10)
+
 }
