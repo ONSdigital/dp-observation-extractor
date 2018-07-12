@@ -12,6 +12,13 @@ job "dp-observation-extractor" {
   group "publishing" {
     count = "{{PUBLISHING_TASK_COUNT}}"
 
+    restart {
+      attempts = 3
+      delay    = "15s"
+      interval = "1m"
+      mode     = "delay"
+    }
+
     task "dp-observation-extractor" {
       driver = "exec"
 
