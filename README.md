@@ -18,6 +18,10 @@ You may want vault to run this service:
 * run kafka consumer / producer apps
 * run local S3 store?
 
+### Kafka scripts
+
+Scripts for updating and debugging Kafka can be found [here](https://github.com/ONSdigital/dp-data-tools)(dp-data-tools)
+
 ### Configuration
 
 | Environment variable       | Default                 | Description
