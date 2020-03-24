@@ -6,7 +6,11 @@ import (
 
 	kafka "github.com/ONSdigital/dp-kafka"
 	"github.com/ONSdigital/dp-observation-extractor/config"
+	"github.com/ONSdigital/dp-observation-extractor/event"
+	s3client "github.com/ONSdigital/dp-s3"
 	"github.com/ONSdigital/log.go/log"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 )
 
 // ExternalServiceList represents a list of services
@@ -16,6 +20,7 @@ type ExternalServiceList struct {
 	ErrorReporterProducer bool
 	Vault                 bool
 	HealthCheck           bool
+	S3Clients             bool
 }
 
 // KafkaProducerName represents a type for kafka producer name used by iota constants
@@ -72,4 +77,23 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, brokers []string,
 	}
 
 	return producer, nil
+}
+
+// GetS3Clients returns a map of AWS S3 clients corresponding to the list of BucketNames
+// and the AWS region provided in the configuration
+func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error) {
+	// establish AWS session
+	awsSession, err = session.NewSession(&aws.Config{Region: &cfg.AWSRegion})
+	if err != nil {
+		return
+	}
+
+	// create S3 clients for expected bucket names, so that they can be health-checked
+	s3Clients = make(map[string]event.S3Client)
+	for _, bucketName := range cfg.BucketNames {
+		s3Clients[bucketName] = s3client.NewClientWithSession(bucketName, !cfg.EncryptionDisabled, awsSession)
+	}
+	e.S3Clients = true
+
+	return
 }

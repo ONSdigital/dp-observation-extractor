@@ -15,10 +15,6 @@ import (
 	vault "github.com/ONSdigital/dp-vault"
 	"github.com/ONSdigital/go-ns/server"
 	"github.com/ONSdigital/log.go/log"
-	"github.com/ONSdigital/s3crypto"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gorilla/mux"
 )
 
@@ -48,6 +44,7 @@ func main() {
 	// serviceList keeps track of what dependency services have been initialised
 	serviceList := initialise.ExternalServiceList{}
 
+	// TODO add new healthcheck
 	router := mux.NewRouter()
 	// router.Path("/healthcheck").HandlerFunc(healthcheck.Handler)
 	httpServer := server.New(config.BindAddr, router)
@@ -64,7 +61,8 @@ func main() {
 		}
 	}()
 
-	sess, err := session.NewSession(&aws.Config{Region: &config.AWSRegion})
+	// S3 Session and clients (mapped by bucket name)
+	sess, s3Clients, err := serviceList.GetS3Clients(config)
 	checkForError(ctx, err)
 
 	// Kafka Consumer
@@ -81,15 +79,20 @@ func main() {
 
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
 
-	var cryptoClient event.CryptoClient
+	// var cryptoClient event.CryptoClient
 	var vaultClient event.VaultClient
 	if !config.EncryptionDisabled {
-		cryptoClient = s3crypto.New(sess, &s3crypto.Config{HasUserDefinedPSK: true, MultipartChunkSize: chunkSize})
+		// cryptoClient = s3crypto.New(sess, &s3crypto.Config{HasUserDefinedPSK: true, MultipartChunkSize: chunkSize})
 		vaultClient, err = vault.CreateClient(config.VaultToken, config.VaultAddr, 3)
 		checkForError(ctx, err)
 	}
-	client := s3.New(sess)
-	eventHandler := event.NewCSVHandler(client, cryptoClient, vaultClient, observationWriter, config.VaultPath)
+	// client := s3.New(sess)
+
+	// bucket := "myBucket"
+	// s3cli, err := s3client.NewClient(config.AWSRegion, bucket, !config.EncryptionDisabled)
+	// checkForError(ctx, err)
+
+	eventHandler := event.NewCSVHandler(sess, s3Clients, vaultClient, observationWriter, config.VaultPath)
 
 	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
 	checkForError(ctx, err)
