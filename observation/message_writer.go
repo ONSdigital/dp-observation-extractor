@@ -1,8 +1,11 @@
 package observation
 
 import (
+	"context"
+
+	kafka "github.com/ONSdigital/dp-kafka"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 )
 
 // MessageWriter writes observations as messages
@@ -12,7 +15,7 @@ type MessageWriter struct {
 
 // MessageProducer dependency that writes messages
 type MessageProducer interface {
-	Output() chan []byte
+	Channels() *kafka.ProducerChannels
 }
 
 // NewMessageWriter returns a new observation message writer.
@@ -23,7 +26,7 @@ func NewMessageWriter(messageProducer MessageProducer) *MessageWriter {
 }
 
 // WriteAll observations as messages from the given observation reader.
-func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) {
+func (messageWriter MessageWriter) WriteAll(ctx context.Context, reader Reader, instanceID string) {
 
 	observation, readErr := reader.Read()
 
@@ -37,17 +40,17 @@ func (messageWriter MessageWriter) WriteAll(reader Reader, instanceID string) {
 
 		bytes, err := schema.ObservationExtractedEvent.Marshal(extractedEvent)
 		if err != nil {
-			log.Error(err, log.Data{
+			log.Event(ctx, "", log.ERROR, log.Error(err), log.Data{
 				"schema": "failed to marshal observation extracted event",
 				"event":  extractedEvent})
 		}
 
-		messageWriter.messageProducer.Output() <- bytes
+		messageWriter.messageProducer.Channels().Output <- bytes
 
 		observation, readErr = reader.Read()
 	}
 
-	log.Debug("all observations extracted", log.Data{"instanceID": instanceID})
+	log.Event(ctx, "all observations extracted", log.INFO, log.Data{"instanceID": instanceID})
 }
 
 // Marshal converts the given observationExtractedEvent to a []byte.

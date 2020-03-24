@@ -1,13 +1,14 @@
 package event
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 	"strconv"
 	"strings"
 
 	"github.com/ONSdigital/dp-observation-extractor/observation"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
@@ -59,19 +60,19 @@ type CryptoClient interface {
 
 // ObservationWriter provides operations for observation output.
 type ObservationWriter interface {
-	WriteAll(observationReader observation.Reader, instanceID string)
+	WriteAll(ctx context.Context, observationReader observation.Reader, instanceID string)
 }
 
 // Handle takes a single event, and returns the observations gathered from the URL in the event.
-func (handler CSVHandler) Handle(event *DimensionsInserted) error {
+func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted) error {
 	url := event.FileURL
 
 	logData := log.Data{"url": url, "event": event}
-	log.Debug("getting file", logData)
+	log.Event(ctx, "getting file", log.INFO, logData)
 
 	bucket, filename, err := GetBucketAndFilename(url)
 	if err != nil {
-		log.ErrorC("unable to find bucket and filename in event file url", err, logData)
+		log.Event(ctx, "unable to find bucket and filename in event file url", log.ERROR, log.Error(err), logData)
 		return err
 	}
 
@@ -90,42 +91,42 @@ func (handler CSVHandler) Handle(event *DimensionsInserted) error {
 		vaultKey := "key"
 		logData["vault_path"] = vaultPath
 
-		log.Debug("attempting to get psk from vault", logData)
+		log.Event(ctx, "attempting to get psk from vault", log.INFO, logData)
 		pskStr, err := handler.vaultClient.ReadKey(vaultPath, vaultKey)
 		if err != nil {
 			return err
 		}
 
-		log.Debug("got psk", logData)
+		log.Event(ctx, "got psk", log.INFO, logData)
 		psk, err := hex.DecodeString(pskStr)
 		if err != nil {
 			return err
 		}
 
-		log.Debug("attempting to get S3 object with psk", logData)
+		log.Event(ctx, "attempting to get S3 object with psk", log.INFO, logData)
 		output, err = handler.client.GetObjectWithPSK(getInput, psk)
 		if err != nil {
-			log.ErrorC("encountered error retrieving and decrypting csv file", err, logData)
+			log.Event(ctx, "encountered error retrieving and decrypting csv file", log.ERROR, log.Error(err), logData)
 			return err
 		}
 	} else {
-		log.Debug("attempting to get S3 object", logData)
+		log.Event(ctx, "attempting to get S3 object", log.INFO, logData)
 		output, err = handler.client.GetObject(getInput)
 		if err != nil {
-			log.ErrorC("unable to retrieve s3 output object", err, logData)
+			log.Event(ctx, "unable to retrieve s3 output object", log.ERROR, log.Error(err), logData)
 			return err
 		}
 	}
 
 	logData["content_length"] = getContentLength(output)
-	log.Info("file read from s3", logData)
+	log.Event(ctx, "file read from s3", log.INFO, logData)
 
 	file := output.Body
 	defer output.Body.Close()
 
 	observationReader := observation.NewCSVReader(file)
 
-	handler.observationWriter.WriteAll(observationReader, event.InstanceID)
+	handler.observationWriter.WriteAll(ctx, observationReader, event.InstanceID)
 	return nil
 }
 

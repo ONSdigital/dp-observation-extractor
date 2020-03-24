@@ -9,13 +9,12 @@ import (
 
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
+	"github.com/ONSdigital/dp-observation-extractor/initialise"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-reporter-client/reporter"
-	"github.com/ONSdigital/go-ns/handlers/healthcheck"
-	"github.com/ONSdigital/go-ns/kafka"
-	"github.com/ONSdigital/go-ns/log"
+	vault "github.com/ONSdigital/dp-vault"
 	"github.com/ONSdigital/go-ns/server"
-	"github.com/ONSdigital/go-ns/vault"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/ONSdigital/s3crypto"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -28,21 +27,29 @@ const chunkSize = 5 * 1024 * 1024
 func main() {
 
 	log.Namespace = "dp-observation-extractor"
+	ctx := context.Background()
 
 	config, err := config.Get()
 	if err != nil {
-		log.Error(err, nil)
+		log.Event(ctx, "error getting config", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 
 	// sensitive fields are omitted from config.String().
-	log.Info("config on startup", log.Data{"config": config})
+	log.Event(ctx, "config on startup", log.INFO, log.Data{"config": config})
 
 	// a channel used to signal a graceful exit is required.
 	errorChannel := make(chan error)
 
+	// Signal channel to know if SIGTERM is triggered
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+
+	// serviceList keeps track of what dependency services have been initialised
+	serviceList := initialise.ExternalServiceList{}
+
 	router := mux.NewRouter()
-	router.Path("/healthcheck").HandlerFunc(healthcheck.Handler)
+	// router.Path("/healthcheck").HandlerFunc(healthcheck.Handler)
 	httpServer := server.New(config.BindAddr, router)
 
 	// Disable auto handling of os signals by the HTTP server. This is handled
@@ -51,26 +58,26 @@ func main() {
 	httpServer.HandleOSSignals = false
 
 	go func() {
-		log.Debug("starting http server", log.Data{"bind_addr": config.BindAddr})
+		log.Event(ctx, "starting http server", log.INFO, log.Data{"bind_addr": config.BindAddr})
 		if err = httpServer.ListenAndServe(); err != nil {
 			errorChannel <- err
 		}
 	}()
 
 	sess, err := session.NewSession(&aws.Config{Region: &config.AWSRegion})
-	checkForError(err)
+	checkForError(ctx, err)
 
-	kafkaConsumer, err := kafka.NewConsumerGroup(config.KafkaAddr,
-		config.FileConsumerTopic,
-		config.FileConsumerGroup,
-		kafka.OffsetNewest)
-	checkForError(err)
+	// Kafka Consumer
+	kafkaConsumer, err := serviceList.GetConsumer(ctx, config)
+	checkForError(ctx, err)
 
-	kafkaObservationProducer, err := kafka.NewProducer(config.KafkaAddr, config.ObservationProducerTopic, 0)
-	checkForError(err)
+	// Kafka Observation Producer
+	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ObservationProducerTopic, initialise.Observation)
+	checkForError(ctx, err)
 
-	kafkaErrorProducer, err := kafka.NewProducer(config.KafkaAddr, config.ErrorProducerTopic, 0)
-	checkForError(err)
+	// Kafka Error Reporter
+	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ErrorProducerTopic, initialise.ErrorReporter)
+	checkForError(ctx, err)
 
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
 
@@ -78,82 +85,77 @@ func main() {
 	var vaultClient event.VaultClient
 	if !config.EncryptionDisabled {
 		cryptoClient = s3crypto.New(sess, &s3crypto.Config{HasUserDefinedPSK: true, MultipartChunkSize: chunkSize})
-		vaultClient, err = vault.CreateVaultClient(config.VaultToken, config.VaultAddr, 3)
-		checkForError(err)
+		vaultClient, err = vault.CreateClient(config.VaultToken, config.VaultAddr, 3)
+		checkForError(ctx, err)
 	}
 	client := s3.New(sess)
 	eventHandler := event.NewCSVHandler(client, cryptoClient, vaultClient, observationWriter, config.VaultPath)
 
 	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
-	checkForError(err)
+	checkForError(ctx, err)
 
 	eventConsumer := event.NewConsumer()
-	eventConsumer.Consume(kafkaConsumer, eventHandler, errorReporter)
+	eventConsumer.Consume(ctx, kafkaConsumer, eventHandler, errorReporter)
 
 	shutdownGracefully := func() {
 
-		ctx, cancel := context.WithTimeout(context.Background(), config.GracefulShutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, config.GracefulShutdownTimeout)
 
 		// gracefully dispose resources
 		err = eventConsumer.Close(ctx)
 		if err != nil {
-			log.Error(err, nil)
+			log.Event(ctx, "error closing event consumer", log.ERROR, log.Error(err))
 		}
 
 		err = kafkaConsumer.Close(ctx)
 		if err != nil {
-			log.Error(err, nil)
+			log.Event(ctx, "error closing kafka consumer", log.ERROR, log.Error(err))
 		}
 
 		err = kafkaErrorProducer.Close(ctx)
 		if err != nil {
-			log.Error(err, nil)
+			log.Event(ctx, "error closing kafka error producer", log.ERROR, log.Error(err))
 		}
 
 		err = kafkaObservationProducer.Close(ctx)
 		if err != nil {
-			log.Error(err, nil)
+			log.Event(ctx, "error closing kafka observation producer", log.ERROR, log.Error(err))
 		}
 
 		err = httpServer.Shutdown(ctx)
 		if err != nil {
-			log.Error(err, nil)
+			log.Event(ctx, "error shutting down http server ", log.ERROR, log.Error(err))
 		}
 
 		// cancel the timer in the shutdown context.
 		cancel()
 
-		log.Debug("graceful shutdown was successful", nil)
-		os.Exit(1)
+		log.Event(ctx, "graceful shutdown was successful", log.INFO)
+		os.Exit(0)
 	}
 
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-
-	for {
-		select {
-		case err := <-kafkaConsumer.Errors():
-			log.ErrorC("kafka consumer", err, nil)
-			shutdownGracefully()
-		case err := <-kafkaObservationProducer.Errors():
-			log.ErrorC("kafka result producer", err, nil)
-			shutdownGracefully()
-		case err := <-kafkaErrorProducer.Errors():
-			log.ErrorC("kafka error producer", err, nil)
-			shutdownGracefully()
-		case err := <-errorChannel:
-			log.ErrorC("error channel", err, nil)
-			shutdownGracefully()
-		case <-signals:
-			log.Error(errors.New("os signal received"), nil)
-			shutdownGracefully()
+	// Log non-fatal errors in separate go routines
+	kafkaConsumer.Channels().LogErrors(ctx, "kafka consumer error")
+	kafkaObservationProducer.Channels().LogErrors(ctx, "kafka observation producer error")
+	kafkaErrorProducer.Channels().LogErrors(ctx, "kafka error producer error")
+	go func() {
+		for {
+			select {
+			case err := <-errorChannel:
+				log.Event(ctx, "error channel", log.ERROR, log.Error(err))
+			}
 		}
-	}
+	}()
+
+	// When a signal is received, shutdown gracefully
+	<-signals
+	log.Event(ctx, "os signal received", log.ERROR, log.Error(errors.New("os signal received")))
+	shutdownGracefully()
 }
 
-func checkForError(err error) {
+func checkForError(ctx context.Context, err error) {
 	if err != nil {
-		log.Error(err, nil)
+		log.Event(ctx, "error", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 }

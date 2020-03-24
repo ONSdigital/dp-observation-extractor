@@ -1,13 +1,17 @@
 package observation_test
 
 import (
+	"context"
+	"testing"
+
+	kafkatest "github.com/ONSdigital/dp-kafka/kafkatest"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
-	"github.com/ONSdigital/go-ns/kafka/kafkatest"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
+
+var ctx = context.Background()
 
 func TestMessageWriter_WriteAll(t *testing.T) {
 
@@ -23,19 +27,21 @@ func TestMessageWriter_WriteAll(t *testing.T) {
 		mockObservationReader := observationtest.NewReader(expectedObservations, nil)
 
 		// mock schema producer contains the output channel to capture messages sent.
-		outputChannel := make(chan []byte, 1)
-		mockMessageProducer := kafkatest.NewMessageProducer(outputChannel, nil, nil)
+		mockMessageProducer := kafkatest.NewMessageProducer(true)
 
 		observationMessageWriter := observation.NewMessageWriter(mockMessageProducer)
 
 		Convey("When write all is called on the observation schema writer", func() {
 
-			observationMessageWriter.WriteAll(mockObservationReader, expectedInstanceID)
+			go func() {
+				observationMessageWriter.WriteAll(ctx, mockObservationReader, expectedInstanceID)
+			}()
 
 			Convey("The schema producer has the observation on its output channel", func() {
 
-				messageBytes := <-outputChannel
-				close(outputChannel)
+				messageBytes := <-mockMessageProducer.Channels().Output
+				err := mockMessageProducer.Close(ctx)
+				So(err, ShouldBeNil)
 				observationEvent := Unmarshal(messageBytes)
 				So(observationEvent.InstanceID, ShouldEqual, expectedEvent.InstanceID)
 			})

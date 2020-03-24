@@ -1,6 +1,8 @@
 package eventtest
 
 import (
+	"context"
+
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 )
@@ -13,6 +15,6 @@ type ObservationWriter struct {
 }
 
 // WriteAll will capture the reader passed to it for assertions.
-func (observationWriter *ObservationWriter) WriteAll(reader observation.Reader, instanceID string) {
+func (observationWriter *ObservationWriter) WriteAll(ctx context.Context, reader observation.Reader, instanceID string) {
 	observationWriter.Reader = reader
 }

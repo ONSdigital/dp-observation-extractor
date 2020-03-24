@@ -1,6 +1,8 @@
 package eventtest
 
 import (
+	"context"
+
 	"github.com/ONSdigital/dp-observation-extractor/event"
 )
 
@@ -23,7 +25,7 @@ type EventHandler struct {
 }
 
 // Handle captures the given event and stores it for later assertions
-func (handler *EventHandler) Handle(event *event.DimensionsInserted) error {
+func (handler *EventHandler) Handle(ctx context.Context, event *event.DimensionsInserted) error {
 	handler.Events = append(handler.Events, *event)
 	return handler.Error
 }

@@ -45,7 +45,7 @@ func TestSuccessfullyHandleCSV(t *testing.T) {
 
 				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 
-				err := csvHandler.Handle(getExampleEvent())
+				err := csvHandler.Handle(ctx, getExampleEvent())
 
 				So(err, ShouldBeNil)
 			})
@@ -60,7 +60,7 @@ func TestSuccessfullyHandleCSV(t *testing.T) {
 				psk := []byte("Hello World")
 				path := "test-path"
 
-				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return(encodedPSK, nil)
+				vaultClient.EXPECT().ReadKey(path+"/"+filename, "key").Return(encodedPSK, nil)
 
 				s3GetOutput := &s3.GetObjectOutput{
 					Body: ioutil.NopCloser(strings.NewReader(exampleHeader + "\n" + exampleCsvLine)),
@@ -70,7 +70,7 @@ func TestSuccessfullyHandleCSV(t *testing.T) {
 
 				csvHandler := event.NewCSVHandler(nil, client, vaultClient, observationWriterStub, path)
 
-				err := csvHandler.Handle(getExampleEvent())
+				err := csvHandler.Handle(ctx, getExampleEvent())
 
 				So(err, ShouldBeNil)
 			})
@@ -91,7 +91,7 @@ func TestFailToHandleCSV(t *testing.T) {
 
 				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 
-				err := csvHandler.Handle(&event.DimensionsInserted{
+				err := csvHandler.Handle(ctx, &event.DimensionsInserted{
 					InstanceID: "1234",
 					FileURL:    "",
 				})
@@ -109,7 +109,7 @@ func TestFailToHandleCSV(t *testing.T) {
 				observationWriterStub := &eventtest.ObservationWriter{}
 
 				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
-				err := csvHandler.Handle(&event.DimensionsInserted{
+				err := csvHandler.Handle(ctx, &event.DimensionsInserted{
 					InstanceID: "1234",
 					FileURL:    "s3://",
 				})
@@ -127,11 +127,11 @@ func TestFailToHandleCSV(t *testing.T) {
 				path := "test-path"
 				testErr := errors.New("vault client error")
 
-				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return("", testErr)
+				vaultClient.EXPECT().ReadKey(path+"/"+filename, "key").Return("", testErr)
 
 				csvHandler := event.NewCSVHandler(nil, nil, vaultClient, nil, path)
 
-				err := csvHandler.Handle(getExampleEvent())
+				err := csvHandler.Handle(ctx, getExampleEvent())
 
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldEqual, "vault client error")
@@ -146,11 +146,11 @@ func TestFailToHandleCSV(t *testing.T) {
 				path := "test-path"
 				invalidPSK := "this-is-not-hex-encoded"
 
-				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return(invalidPSK, nil)
+				vaultClient.EXPECT().ReadKey(path+"/"+filename, "key").Return(invalidPSK, nil)
 
 				csvHandler := event.NewCSVHandler(nil, nil, vaultClient, nil, path)
 
-				err := csvHandler.Handle(getExampleEvent())
+				err := csvHandler.Handle(ctx, getExampleEvent())
 
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldEqual, "encoding/hex: invalid byte: U+0074 't'")
@@ -169,13 +169,13 @@ func TestFailToHandleCSV(t *testing.T) {
 				path := "test-path"
 				testErr := errors.New("crypto client error")
 
-				vaultClient.EXPECT().ReadKey(path + "/" + filename, "key").Return(encodedPSK, nil)
+				vaultClient.EXPECT().ReadKey(path+"/"+filename, "key").Return(encodedPSK, nil)
 
 				client.EXPECT().GetObjectWithPSK(getInput, psk).Return(nil, testErr)
 
 				csvHandler := event.NewCSVHandler(nil, client, vaultClient, observationWriterStub, path)
 
-				err := csvHandler.Handle(getExampleEvent())
+				err := csvHandler.Handle(ctx, getExampleEvent())
 
 				So(err, ShouldNotBeNil)
 				So(err.Error(), ShouldEqual, "crypto client error")
@@ -191,7 +191,7 @@ func TestFailToHandleCSV(t *testing.T) {
 
 				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 
-				err := csvHandler.Handle(&event.DimensionsInserted{
+				err := csvHandler.Handle(ctx, &event.DimensionsInserted{
 					InstanceID: "1234",
 					FileURL:    "s3://some-file",
 				})
@@ -211,7 +211,7 @@ func TestFailToHandleCSV(t *testing.T) {
 
 				csvHandler := event.NewCSVHandler(client, nil, nil, observationWriterStub, "")
 
-				err := csvHandler.Handle(getExampleEvent())
+				err := csvHandler.Handle(ctx, getExampleEvent())
 
 				So(err, ShouldNotBeNil)
 				So(err, ShouldResemble, errors.New("EOF"))
