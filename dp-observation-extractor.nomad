@@ -48,7 +48,14 @@ job "dp-observation-extractor" {
 
       service {
         name = "dp-observation-extractor"
+        port = "http"
         tags = ["publishing"]
+        check {
+          type     = "http"
+          path     = "/health"
+          interval = "10s"
+          timeout  = "2s"
+        }
       }
 
       resources {

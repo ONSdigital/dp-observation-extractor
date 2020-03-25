@@ -5,8 +5,8 @@ github.com/ONSdigital/dp-frontend-models v1.1.0/go.mod h1:TT96P7Mi69N3Tc/jFNdbji
 github.com/ONSdigital/dp-healthcheck v0.0.0-20200131122546-9db6d3f0494e/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
 github.com/ONSdigital/dp-healthcheck v1.0.0 h1:bySQU8kQRs4n3WbgH8QtVwCJLqG9ri722saATjvNNfc=
 github.com/ONSdigital/dp-healthcheck v1.0.0/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
-github.com/ONSdigital/dp-healthcheck v1.0.1 h1:Ypw6a+kAktlQArOxMelrxRnNnFV9Jsf/qh1UKi+hn8M=
-github.com/ONSdigital/dp-healthcheck v1.0.1/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
+github.com/ONSdigital/dp-healthcheck v1.0.2-0.20200325163448-3c859060bcf7 h1:pSFxeMaz/ExWde88+unTtZb4O0/KUSzUFpWE10sdx2g=
+github.com/ONSdigital/dp-healthcheck v1.0.2-0.20200325163448-3c859060bcf7/go.mod h1:zighxZ/0m5u7zo0eAr8XFlA+Dz2ic7A1vna6YXvhCjQ=
 github.com/ONSdigital/dp-kafka v1.1.1/go.mod h1:5wrPA3e92d82nOIhdzTsKW5hecJ14LO5URWGUEvPkQU=
 github.com/ONSdigital/dp-kafka v1.1.4 h1:cLdE2hOT4MufGwQK0GwZyvaFTxsIi1dw5z6+Sa7VlFU=
 github.com/ONSdigital/dp-kafka v1.1.4/go.mod h1:5wrPA3e92d82nOIhdzTsKW5hecJ14LO5URWGUEvPkQU=
