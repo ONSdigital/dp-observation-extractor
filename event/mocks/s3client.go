@@ -4,12 +4,15 @@
 package mock
 
 import (
+	"context"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"io"
 	"sync"
 )
 
 var (
+	lockS3ClientMockChecker    sync.RWMutex
 	lockS3ClientMockGet        sync.RWMutex
 	lockS3ClientMockGetWithPSK sync.RWMutex
 )
@@ -24,6 +27,9 @@ var _ event.S3Client = &S3ClientMock{}
 //
 //         // make and configure a mocked event.S3Client
 //         mockedS3Client := &S3ClientMock{
+//             CheckerFunc: func(ctx context.Context, state *healthcheck.CheckState) error {
+// 	               panic("mock out the Checker method")
+//             },
 //             GetFunc: func(key string) (io.ReadCloser, *int64, error) {
 // 	               panic("mock out the Get method")
 //             },
@@ -37,6 +43,9 @@ var _ event.S3Client = &S3ClientMock{}
 //
 //     }
 type S3ClientMock struct {
+	// CheckerFunc mocks the Checker method.
+	CheckerFunc func(ctx context.Context, state *healthcheck.CheckState) error
+
 	// GetFunc mocks the Get method.
 	GetFunc func(key string) (io.ReadCloser, *int64, error)
 
@@ -45,6 +54,13 @@ type S3ClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Checker holds details about calls to the Checker method.
+		Checker []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// State is the state argument value.
+			State *healthcheck.CheckState
+		}
 		// Get holds details about calls to the Get method.
 		Get []struct {
 			// Key is the key argument value.
@@ -58,6 +74,41 @@ type S3ClientMock struct {
 			Psk []byte
 		}
 	}
+}
+
+// Checker calls CheckerFunc.
+func (mock *S3ClientMock) Checker(ctx context.Context, state *healthcheck.CheckState) error {
+	if mock.CheckerFunc == nil {
+		panic("S3ClientMock.CheckerFunc: method is nil but S3Client.Checker was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		State *healthcheck.CheckState
+	}{
+		Ctx:   ctx,
+		State: state,
+	}
+	lockS3ClientMockChecker.Lock()
+	mock.calls.Checker = append(mock.calls.Checker, callInfo)
+	lockS3ClientMockChecker.Unlock()
+	return mock.CheckerFunc(ctx, state)
+}
+
+// CheckerCalls gets all the calls that were made to Checker.
+// Check the length with:
+//     len(mockedS3Client.CheckerCalls())
+func (mock *S3ClientMock) CheckerCalls() []struct {
+	Ctx   context.Context
+	State *healthcheck.CheckState
+} {
+	var calls []struct {
+		Ctx   context.Context
+		State *healthcheck.CheckState
+	}
+	lockS3ClientMockChecker.RLock()
+	calls = mock.calls.Checker
+	lockS3ClientMockChecker.RUnlock()
+	return calls
 }
 
 // Get calls GetFunc.

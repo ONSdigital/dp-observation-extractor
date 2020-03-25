@@ -4,11 +4,14 @@
 package mock
 
 import (
+	"context"
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"sync"
 )
 
 var (
+	lockVaultClientMockChecker sync.RWMutex
 	lockVaultClientMockReadKey sync.RWMutex
 )
 
@@ -22,6 +25,9 @@ var _ event.VaultClient = &VaultClientMock{}
 //
 //         // make and configure a mocked event.VaultClient
 //         mockedVaultClient := &VaultClientMock{
+//             CheckerFunc: func(ctx context.Context, state *healthcheck.CheckState) error {
+// 	               panic("mock out the Checker method")
+//             },
 //             ReadKeyFunc: func(path string, key string) (string, error) {
 // 	               panic("mock out the ReadKey method")
 //             },
@@ -32,11 +38,21 @@ var _ event.VaultClient = &VaultClientMock{}
 //
 //     }
 type VaultClientMock struct {
+	// CheckerFunc mocks the Checker method.
+	CheckerFunc func(ctx context.Context, state *healthcheck.CheckState) error
+
 	// ReadKeyFunc mocks the ReadKey method.
 	ReadKeyFunc func(path string, key string) (string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Checker holds details about calls to the Checker method.
+		Checker []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// State is the state argument value.
+			State *healthcheck.CheckState
+		}
 		// ReadKey holds details about calls to the ReadKey method.
 		ReadKey []struct {
 			// Path is the path argument value.
@@ -45,6 +61,41 @@ type VaultClientMock struct {
 			Key string
 		}
 	}
+}
+
+// Checker calls CheckerFunc.
+func (mock *VaultClientMock) Checker(ctx context.Context, state *healthcheck.CheckState) error {
+	if mock.CheckerFunc == nil {
+		panic("VaultClientMock.CheckerFunc: method is nil but VaultClient.Checker was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		State *healthcheck.CheckState
+	}{
+		Ctx:   ctx,
+		State: state,
+	}
+	lockVaultClientMockChecker.Lock()
+	mock.calls.Checker = append(mock.calls.Checker, callInfo)
+	lockVaultClientMockChecker.Unlock()
+	return mock.CheckerFunc(ctx, state)
+}
+
+// CheckerCalls gets all the calls that were made to Checker.
+// Check the length with:
+//     len(mockedVaultClient.CheckerCalls())
+func (mock *VaultClientMock) CheckerCalls() []struct {
+	Ctx   context.Context
+	State *healthcheck.CheckState
+} {
+	var calls []struct {
+		Ctx   context.Context
+		State *healthcheck.CheckState
+	}
+	lockVaultClientMockChecker.RLock()
+	calls = mock.calls.Checker
+	lockVaultClientMockChecker.RUnlock()
+	return calls
 }
 
 // ReadKey calls ReadKeyFunc.

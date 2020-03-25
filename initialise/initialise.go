@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	kafka "github.com/ONSdigital/dp-kafka"
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
@@ -80,7 +81,7 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, brokers []string,
 }
 
 // GetS3Clients returns a map of AWS S3 clients corresponding to the list of BucketNames
-// and the AWS region provided in the configuration
+// and the AWS region provided in the configuration. If encryption is enabled, the s3clients will be cryptoclients.
 func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error) {
 	// establish AWS session
 	awsSession, err = session.NewSession(&aws.Config{Region: &cfg.AWSRegion})
@@ -96,4 +97,17 @@ func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *sess
 	e.S3Clients = true
 
 	return
+}
+
+// GetHealthChecker creates a new healthcheck object
+func (e *ExternalServiceList) GetHealthChecker(ctx context.Context, buildTime, gitCommit, version string, cfg *config.Config) (*healthcheck.HealthCheck, error) {
+	versionInfo, err := healthcheck.NewVersionInfo(buildTime, gitCommit, version)
+	if err != nil {
+		log.Event(ctx, "failed to create versionInfo for healthcheck", log.FATAL, log.Error(err))
+		return nil, err
+	}
+	hc := healthcheck.New(versionInfo, cfg.HealthCheckRecoveryInterval, cfg.HealthCheckInterval)
+	e.HealthCheck = true
+
+	return &hc, nil
 }
