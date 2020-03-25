@@ -42,7 +42,7 @@ func Get() (*Config, error) {
 		VaultAddr:                   "http://localhost:8200",
 		VaultToken:                  "",
 		VaultPath:                   "secret/shared/psk",
-		BucketNames:                 []string{"dp-frontend-florence-file-uploads"},
+		BucketNames:                 []string{"ons-dp-publishing-uploaded-datasets"},
 		HealthCheckInterval:         10 * time.Second,
 		HealthCheckRecoveryInterval: 1 * time.Minute,
 	}

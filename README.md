@@ -24,23 +24,25 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 
 ### Configuration
 
-| Environment variable       | Default                 | Description
-| ---------------------------| ----------------------- | ----------------------------------------------------
-| AWS_REGION                 | "eu-west-1"             | The AWS region to use
-| BIND_ADDR                  | ":21600"                | The port to bind to
-| ENCRYPTION_DISABLED        | true                    | A boolean flag to identify if encryption of files is disabled or not
-| ERROR_PRODUCER_TOPIC       | "report-events"         | The Kafka topic to send report event errors to
-| FILE_CONSUMER_GROUP        | "dimensions-inserted"   | The Kafka consumer group to consume file messages from
-| FILE_CONSUMER_TOPIC        | "dimensions-inserted"   | The Kafka topic to consume file messages from
-| GRACEFUL_SHUTDOWN_TIMEOUT  | "5s"                    | The shutdown timeout in seconds
-| KAFKA_ADDR                 | "http://localhost:9092" | The address of the Kafka instance
-| OBSERVATION_PRODUCER_TOPIC | "observation-extracted" | The Kafka topic to send the observation messages to
-| VAULT_ADDR                 | http://localhost:8200   | The vault address
-| VAULT_TOKEN                | -                       | Vault token required for the client to talk to vault. (Use `make debug` to create a vault token)
-| VAULT_PATH                 | secret/shared/psk       | The path where the psks will be stored in for vault
-| AWS_ACCESS_KEY_ID          | -                       | The AWS access key credential for the observation extractor
-| AWS_SECRET_ACCESS_KEY      | -                       | The AWS secret key credential for the observation extractor
-
+| Environment variable          | Default                             | Description
+| ----------------------------- | ----------------------------------- | ----------------------------------------------------
+| AWS_REGION                    | "eu-west-1"                         | The AWS region to use
+| BIND_ADDR                     | ":21600"                            | The port to bind to
+| ENCRYPTION_DISABLED           | true                                | A boolean flag to identify if encryption of files is disabled or not
+| ERROR_PRODUCER_TOPIC          | "report-events"                     | The Kafka topic to send report event errors to
+| FILE_CONSUMER_GROUP           | "dimensions-inserted"               | The Kafka consumer group to consume file messages from
+| FILE_CONSUMER_TOPIC           | "dimensions-inserted"               | The Kafka topic to consume file messages from
+| GRACEFUL_SHUTDOWN_TIMEOUT     | "5s"                                | The shutdown timeout in seconds
+| KAFKA_ADDR                    | "http://localhost:9092"             | The address of the Kafka instance
+| OBSERVATION_PRODUCER_TOPIC    | "observation-extracted"             | The Kafka topic to send the observation messages to
+| VAULT_ADDR                    | http://localhost:8200               | The vault address
+| VAULT_TOKEN                   | -                                   | Vault token required for the client to talk to vault. (Use `make debug` to create a vault token)
+| VAULT_PATH                    | secret/shared/psk                   | The path where the psks will be stored in for vault
+| AWS_ACCESS_KEY_ID             | -                                   | The AWS access key credential for the observation extractor
+| AWS_SECRET_ACCESS_KEY         | -                                   | The AWS secret key credential for the observation extractor
+| BUCKET_NAMES                  | ons-dp-publishing-uploaded-datasets | The expected S3 bucket names where the CSV files will be obtained from
+| HEALTHCHECK_INTERVAL          | 10s                                 | The period of time between health 
+| HEALTHCHECK_RECOVERY_INTERVAL | 1m                                  | The period of time after which failing checks will result in critical global check status
 
 ### Contributing
 

@@ -34,7 +34,7 @@ func TestSpec(t *testing.T) {
 					VaultAddr:                   "http://localhost:8200",
 					VaultPath:                   "secret/shared/psk",
 					VaultToken:                  "",
-					BucketNames:                 []string{"dp-frontend-florence-file-uploads"},
+					BucketNames:                 []string{"ons-dp-publishing-uploaded-datasets"},
 					HealthCheckInterval:         10 * time.Second,
 					HealthCheckRecoveryInterval: 1 * time.Minute,
 				})
