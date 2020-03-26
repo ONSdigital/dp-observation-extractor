@@ -17,15 +17,15 @@ type Handler interface {
 
 // Consumer consumes event messages.
 type Consumer struct {
-	closing chan bool
-	closed  chan bool
+	Closing chan bool
+	Closed  chan bool
 }
 
 // NewConsumer returns a new consumer instance.
 func NewConsumer() *Consumer {
 	return &Consumer{
-		closing: make(chan bool),
-		closed:  make(chan bool),
+		Closing: make(chan bool),
+		Closed:  make(chan bool),
 	}
 }
 
@@ -33,15 +33,17 @@ func NewConsumer() *Consumer {
 func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.IConsumerGroup, handler Handler, errorReporter reporter.ErrorReporter) {
 
 	go func() {
-		defer close(consumer.closed)
+		defer close(consumer.Closed)
 
 		for {
 			select {
 			case message := <-messageConsumer.Channels().Upstream:
 
-				event, err := Unmarshal(message)
 				// In the future, the context will be obtained from the kafka message
 				msgCtx := context.Background()
+
+				// Unmarshal message
+				event, err := Unmarshal(message)
 				if err != nil {
 					log.Event(msgCtx, "message unmarshal error", log.ERROR, log.Error(err))
 					continue
@@ -50,6 +52,7 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 				logData := log.Data{"event": event}
 				log.Event(msgCtx, "event received", log.INFO, logData)
 
+				// Handle the message
 				if err = handler.Handle(ctx, event); err != nil {
 					log.Event(msgCtx, "failed to handle event", log.ERROR, log.Error(err), logData)
 					if err = errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
@@ -58,11 +61,12 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 					continue
 				}
 
+				// On success, commit and release the message
 				log.Event(msgCtx, "event processed - committing message", log.INFO, logData)
 				messageConsumer.CommitAndRelease(message)
 				log.Event(msgCtx, "message committed and kafka consumer released", log.INFO, logData)
 
-			case <-consumer.closing:
+			case <-consumer.Closing:
 				log.Event(ctx, "closing event consumer loop", log.INFO)
 				return
 			}
@@ -78,10 +82,10 @@ func (consumer *Consumer) Close(ctx context.Context) (err error) {
 		ctx = context.Background()
 	}
 
-	close(consumer.closing)
+	close(consumer.Closing)
 
 	select {
-	case <-consumer.closed:
+	case <-consumer.Closed:
 		log.Event(ctx, "successfully closed event consumer", log.INFO)
 		return nil
 	case <-ctx.Done():

@@ -7,11 +7,9 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/event/eventtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
-	"github.com/ONSdigital/log.go/log"
 
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/ONSdigital/dp-reporter-client/reporter/reportertest"
 	. "github.com/smartystreets/goconvey/convey"
@@ -24,10 +22,11 @@ func TestConsume_UnmarshallError(t *testing.T) {
 
 		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
-		handler := eventtest.NewEventHandler()
+		handler := eventtest.NewEventHandler(nil)
 
 		expectedEvent := getExampleEvent()
 
+		// Make sure the invalid schema is sent first
 		go func() {
 			messageConsumer.Channels().Upstream <- kafkatest.NewMessage([]byte("invalid schema"), 0)
 			messageConsumer.Channels().Upstream <- kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
@@ -38,7 +37,9 @@ func TestConsume_UnmarshallError(t *testing.T) {
 			consumer := event.NewConsumer()
 			consumer.Consume(ctx, messageConsumer, handler, reporter)
 
-			waitForEventsToBeSentToHandler(ctx, handler)
+			// Wait for handler to receive message, and message to be successfully released
+			<-handler.ChHandle
+			<-messageConsumer.Channels().UpstreamDone
 
 			Convey("Only the valid event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
@@ -59,40 +60,35 @@ func TestConsumer_HandlerError(t *testing.T) {
 	Convey("Given an event consumer with a valid schema", t, func(c C) {
 
 		reporter := reportertest.NewImportErrorReporterMock(nil)
-
 		messageConsumer := kafkatest.NewMessageConsumer(true)
 
 		handlerErr := errors.New("handler error")
-		handler := &eventtest.EventHandler{
-			Events: nil,
-			Error:  handlerErr,
-		}
+		handler := eventtest.NewEventHandler(handlerErr)
 
 		expectedEvent := getExampleEvent()
 
-		message := kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
-		messageConsumer.Channels().Upstream <- message
+		messageConsumer.Channels().Upstream <- kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
 
 		Convey("When consume is called", func() {
 
 			consumer := event.NewConsumer()
 			consumer.Consume(ctx, messageConsumer, handler, reporter)
 
-			waitForEventsToBeSentToHandler(ctx, handler)
+			waitEventsAndCloseHandler(ctx, consumer, handler, 1)
 
-			Convey("A event is sent to the handler ", func() {
+			Convey("An event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
 
 				event := handler.Events[0]
 				So(event.FileURL, ShouldEqual, expectedEvent.FileURL)
 				So(event.InstanceID, ShouldEqual, expectedEvent.InstanceID)
-			})
 
-			Convey("Then the returned handler error is passed to the error handler", func() {
-				So(len(reporter.NotifyCalls()), ShouldEqual, 1)
-				So(reporter.NotifyCalls()[0].ID, ShouldEqual, expectedEvent.InstanceID)
-				So(reporter.NotifyCalls()[0].ErrContext, ShouldEqual, "failed to handle event")
-				So(reporter.NotifyCalls()[0].Err, ShouldResemble, handlerErr)
+				Convey("Then the returned handler error is passed to the error handler", func() {
+					So(len(reporter.NotifyCalls()), ShouldEqual, 1)
+					So(reporter.NotifyCalls()[0].ID, ShouldEqual, expectedEvent.InstanceID)
+					So(reporter.NotifyCalls()[0].ErrContext, ShouldEqual, "failed to handle event")
+					So(reporter.NotifyCalls()[0].Err, ShouldResemble, handlerErr)
+				})
 			})
 		})
 	})
@@ -104,7 +100,7 @@ func TestConsume(t *testing.T) {
 
 		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
-		handler := eventtest.NewEventHandler()
+		handler := eventtest.NewEventHandler(nil)
 
 		expectedEvent := getExampleEvent()
 
@@ -116,7 +112,7 @@ func TestConsume(t *testing.T) {
 			consumer := event.NewConsumer()
 			consumer.Consume(ctx, messageConsumer, handler, reporter)
 
-			waitForEventsToBeSentToHandler(ctx, handler)
+			waitEventsAndCloseHandler(ctx, consumer, handler, 1)
 
 			Convey("A event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
@@ -157,32 +153,6 @@ func TestToEvent(t *testing.T) {
 	})
 }
 
-func TestClose(t *testing.T) {
-
-	Convey("Given a consumer", t, func(c C) {
-
-		messageConsumer := kafkatest.NewMessageConsumer(true)
-		handler := eventtest.NewEventHandler()
-
-		expectedEvent := getExampleEvent()
-
-		message := kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
-		messageConsumer.Channels().Upstream <- message
-
-		consumer := event.NewConsumer()
-		consumer.Consume(ctx, messageConsumer, handler, nil)
-
-		Convey("When close is called", func() {
-
-			err := consumer.Close(context.Background())
-
-			Convey("The expected event is sent to the handler", func() {
-				So(err, ShouldBeNil)
-			})
-		})
-	})
-}
-
 // marshal helper method to marshal a event into a []byte
 func marshal(event event.DimensionsInserted, c C) []byte {
 	bytes, err := schema.DimensionsInsertedEvent.Marshal(event)
@@ -198,21 +168,17 @@ func getExampleEvent() *event.DimensionsInserted {
 	return expectedEvent
 }
 
-func waitForEventsToBeSentToHandler(ctx context.Context, eventHandler *eventtest.EventHandler) {
+// waitEventsAndCloseHandler waits for a number or events to be sent to the handler, and then closes it,
+// blocking until closed channel is closed, in order to prevent race conditions
+func waitEventsAndCloseHandler(ctx context.Context, consumer *event.Consumer, handler *eventtest.EventHandler, nMsg int) {
 
-	start := time.Now()
-	timeout := start.Add(time.Millisecond * 500)
-	for {
-		if len(eventHandler.Events) > 0 {
-			log.Event(ctx, "events have been sent to the handler", log.INFO)
-			break
-		}
-
-		if time.Now().After(timeout) {
-			log.Event(ctx, "timeout hit", log.INFO)
-			break
-		}
-
-		time.Sleep(time.Millisecond * 10)
+	// Wait for handler to receive nMsg messages
+	for i := 0; i < nMsg; i++ {
+		<-handler.ChHandle
 	}
+
+	// Close the consumer, and wait for it to be closed
+	err := consumer.Close(ctx)
+	So(err, ShouldBeNil)
+	<-consumer.Closed
 }
