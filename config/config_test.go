@@ -22,21 +22,21 @@ func TestSpec(t *testing.T) {
 
 			Convey("The values should be set to the expected defaults", func() {
 				So(*cfg, ShouldResemble, config.Config{
-					AWSRegion:                   "eu-west-1",
-					BindAddr:                    ":21600",
-					EncryptionDisabled:          false,
-					ErrorProducerTopic:          "report-events",
-					FileConsumerGroup:           "dimensions-inserted",
-					FileConsumerTopic:           "dimensions-inserted",
-					GracefulShutdownTimeout:     time.Second * 5,
-					KafkaAddr:                   []string{"localhost:9092"},
-					ObservationProducerTopic:    "observation-extracted",
-					VaultAddr:                   "http://localhost:8200",
-					VaultPath:                   "secret/shared/psk",
-					VaultToken:                  "",
-					BucketNames:                 []string{"ons-dp-publishing-uploaded-datasets"},
-					HealthCheckInterval:         10 * time.Second,
-					HealthCheckRecoveryInterval: 1 * time.Minute,
+					AWSRegion:                "eu-west-1",
+					BindAddr:                 ":21600",
+					EncryptionDisabled:       false,
+					ErrorProducerTopic:       "report-events",
+					FileConsumerGroup:        "dimensions-inserted",
+					FileConsumerTopic:        "dimensions-inserted",
+					GracefulShutdownTimeout:  time.Second * 5,
+					KafkaAddr:                []string{"localhost:9092"},
+					ObservationProducerTopic: "observation-extracted",
+					VaultAddr:                "http://localhost:8200",
+					VaultPath:                "secret/shared/psk",
+					VaultToken:               "",
+					BucketNames:              []string{"dp-frontend-florence-file-uploads"},
+					HealthCheckInterval:      10 * time.Second,
+					HealthCriticalTimeout:    1 * time.Minute,
 				})
 			})
 		})

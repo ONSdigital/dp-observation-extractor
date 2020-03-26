@@ -32,7 +32,7 @@ acceptance:
 	VAULT_TOKEN=$(APP_TOKEN) VAULT_ADDR=$(VAULT_ADDR) ENCRYPTION_DISABLED=false HUMAN_LOG=1 go run $(LDFLAGS) cmd/dp-observation-extractor/main.go
 
 test:
-	go test -cover $(shell go list ./... | grep -v /vendor/)
+	go test -cover -race ./...
 
 vault:
 	@echo "$(VAULT_POLICY)"

@@ -43,7 +43,7 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 				// In the future, the context will be obtained from the kafka message
 				msgCtx := context.Background()
 				if err != nil {
-					log.Event(msgCtx, "message unmarshal error", log.ERROR, log.Data{"message": "failed to unmarshal event"}, log.Error(err))
+					log.Event(msgCtx, "message unmarshal error", log.ERROR, log.Error(err))
 					continue
 				}
 

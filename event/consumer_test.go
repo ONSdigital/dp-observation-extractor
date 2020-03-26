@@ -23,9 +23,7 @@ func TestConsume_UnmarshallError(t *testing.T) {
 	Convey("Given an event consumer with an invalid schema and a valid schema", t, func(c C) {
 
 		reporter := reportertest.NewImportErrorReporterMock(nil)
-		// messages := make(chan kafka.Message, 2)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
-		// messageConsumer := kafkatest.NewMessageConsumer(messages)
 		handler := eventtest.NewEventHandler()
 
 		expectedEvent := getExampleEvent()
@@ -61,7 +59,6 @@ func TestConsumer_HandlerError(t *testing.T) {
 	Convey("Given an event consumer with a valid schema", t, func(c C) {
 
 		reporter := reportertest.NewImportErrorReporterMock(nil)
-		// messages := make(chan kafka.Message, 1)
 
 		messageConsumer := kafkatest.NewMessageConsumer(true)
 
@@ -106,7 +103,6 @@ func TestConsume(t *testing.T) {
 	Convey("Given an event consumer with a valid schema", t, func(c C) {
 
 		reporter := reportertest.NewImportErrorReporterMock(nil)
-		// messages := make(chan kafka.Message, 1)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
 		handler := eventtest.NewEventHandler()
 
@@ -165,7 +161,6 @@ func TestClose(t *testing.T) {
 
 	Convey("Given a consumer", t, func(c C) {
 
-		// messages := make(chan kafka.Message, 1)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
 		handler := eventtest.NewEventHandler()
 

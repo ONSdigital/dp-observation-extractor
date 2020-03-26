@@ -86,7 +86,7 @@ func main() {
 	registerCheckers(ctx, hc, kafkaConsumer, kafkaObservationProducer, kafkaErrorProducer, vaultClient, s3Clients)
 	checkForError(ctx, err)
 
-	httpServer := startHealthCheck(ctx, hc, config.BindAddr)
+	httpServer := startHealthCheck(ctx, hc, config.BindAddr, errorChannel)
 
 	eventHandler := event.NewCSVHandler(sess, s3Clients, vaultClient, observationWriter, config.VaultPath)
 
@@ -99,10 +99,12 @@ func main() {
 	shutdownGracefully := func() {
 
 		ctx, cancel := context.WithTimeout(ctx, config.GracefulShutdownTimeout)
+		anyError := false
 
 		// Stop listening to Kafka consumer
 		if serviceList.Consumer {
 			if err = kafkaConsumer.StopListeningToConsumer(ctx); err != nil {
+				anyError = true
 				log.Event(ctx, "bad kafka consumer listen stop", log.ERROR, log.Error(err), log.Data{"topic": config.FileConsumerTopic})
 			} else {
 				log.Event(ctx, "kafka consumer listen stopped", log.INFO, log.Data{"topic": config.FileConsumerTopic})
@@ -111,6 +113,7 @@ func main() {
 
 		// Stop HTTP server
 		if err = httpServer.Shutdown(ctx); err != nil {
+			anyError = true
 			log.Event(ctx, "bad http server stop", log.ERROR, log.Error(err))
 		} else {
 			log.Event(ctx, "http server stopped", log.INFO)
@@ -118,9 +121,11 @@ func main() {
 
 		// Stop healthcheck
 		hc.Stop()
+		log.Event(ctx, "healthcheck stopped", log.INFO)
 
 		// Close event consumer
 		if err = eventConsumer.Close(ctx); err != nil {
+			anyError = true
 			log.Event(ctx, "bad event consumer stop", log.ERROR, log.Error(err))
 		} else {
 			log.Event(ctx, "event consumer stopped", log.INFO)
@@ -129,6 +134,7 @@ func main() {
 		// Close Kafka consumer
 		if serviceList.Consumer {
 			if err = kafkaConsumer.Close(ctx); err != nil {
+				anyError = true
 				log.Event(ctx, "bad kafka consumer stop", log.ERROR, log.Error(err), log.Data{"topic": config.FileConsumerTopic})
 			} else {
 				log.Event(ctx, "kafka consumer stopped", log.INFO, log.Data{"topic": config.FileConsumerTopic})
@@ -138,6 +144,7 @@ func main() {
 		// Close Error Reporter Kafka producer
 		if serviceList.ErrorReporterProducer {
 			if err = kafkaErrorProducer.Close(ctx); err != nil {
+				anyError = true
 				log.Event(ctx, "bad kafka error reporter producer stop", log.ERROR, log.Error(err), log.Data{"topic": config.ErrorProducerTopic})
 			} else {
 				log.Event(ctx, "kafka error report producer stopped", log.INFO, log.Data{"topic": config.ErrorProducerTopic})
@@ -147,6 +154,7 @@ func main() {
 		// Close Observation Kafka producer
 		if serviceList.ObservationProducer {
 			if err = kafkaObservationProducer.Close(ctx); err != nil {
+				anyError = true
 				log.Event(ctx, "bad kafka observation producer stop", log.ERROR, log.Error(err), log.Data{"topic": config.ObservationProducerTopic})
 			} else {
 				log.Event(ctx, "kafka observation producer stopped", log.INFO, log.Data{"topic": config.ObservationProducerTopic})
@@ -156,6 +164,13 @@ func main() {
 		// cancel the timer in the shutdown context.
 		cancel()
 
+		// if any error happened during shutdown, log it and exit with err code
+		if anyError {
+			log.Event(ctx, "graceful shutdown had errors", log.WARN)
+			os.Exit(1)
+		}
+
+		// if all dependencies shutted down successfully, log it and exit with success code
 		log.Event(ctx, "graceful shutdown was successful", log.INFO)
 		os.Exit(0)
 	}
@@ -180,7 +195,7 @@ func main() {
 }
 
 // StartHealthCheck sets up the Handler, starts the healthcheck and the http server that serves health endpoint
-func startHealthCheck(ctx context.Context, hc *healthcheck.HealthCheck, bindAddr string) *server.Server {
+func startHealthCheck(ctx context.Context, hc *healthcheck.HealthCheck, bindAddr string, errorChannel chan error) *server.Server {
 	router := mux.NewRouter()
 	router.Path("/health").HandlerFunc(hc.Handler)
 	hc.Start(ctx)
@@ -192,6 +207,7 @@ func startHealthCheck(ctx context.Context, hc *healthcheck.HealthCheck, bindAddr
 		if err := httpServer.ListenAndServe(); err != nil {
 			log.Event(ctx, "http server error", log.ERROR, log.Error(err))
 			hc.Stop()
+			errorChannel <- err
 		}
 	}()
 	return httpServer
