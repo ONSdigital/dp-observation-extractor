@@ -35,8 +35,8 @@ func TestSpec(t *testing.T) {
 					VaultPath:                "secret/shared/psk",
 					VaultToken:               "",
 					BucketNames:              []string{"dp-frontend-florence-file-uploads"},
-					HealthCheckInterval:      10 * time.Second,
-					HealthCriticalTimeout:    1 * time.Minute,
+					HealthCheckInterval:      30 * time.Second,
+					HealthCriticalTimeout:    90 * time.Second,
 				})
 			})
 		})

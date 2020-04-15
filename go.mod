@@ -3,7 +3,7 @@ module github.com/ONSdigital/dp-observation-extractor
 go 1.13
 
 require (
-	github.com/ONSdigital/dp-healthcheck v1.0.2
+	github.com/ONSdigital/dp-healthcheck v1.0.3
 	github.com/ONSdigital/dp-kafka v1.1.5
 	github.com/ONSdigital/dp-reporter-client v1.0.0
 	github.com/ONSdigital/dp-s3 v1.5.0

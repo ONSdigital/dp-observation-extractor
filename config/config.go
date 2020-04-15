@@ -43,8 +43,8 @@ func Get() (*Config, error) {
 		VaultToken:               "",
 		VaultPath:                "secret/shared/psk",
 		BucketNames:              []string{"dp-frontend-florence-file-uploads"},
-		HealthCheckInterval:      10 * time.Second,
-		HealthCriticalTimeout:    1 * time.Minute,
+		HealthCheckInterval:      30 * time.Second,
+		HealthCriticalTimeout:    90 * time.Second,
 	}
 
 	return cfg, envconfig.Process("", cfg)
