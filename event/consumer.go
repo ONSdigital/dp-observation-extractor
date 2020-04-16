@@ -4,69 +4,70 @@ import (
 	"context"
 	"errors"
 
+	kafka "github.com/ONSdigital/dp-kafka"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/dp-reporter-client/reporter"
-	"github.com/ONSdigital/go-ns/kafka"
-	"github.com/ONSdigital/go-ns/log"
+	"github.com/ONSdigital/log.go/log"
 )
-
-// MessageConsumer provides a generic interface for consuming []byte messages
-type MessageConsumer interface {
-	Incoming() chan kafka.Message
-}
 
 // Handler represents a handler for processing a single event.
 type Handler interface {
-	Handle(event *DimensionsInserted) error
+	Handle(ctx context.Context, event *DimensionsInserted) error
 }
 
 // Consumer consumes event messages.
 type Consumer struct {
-	closing chan bool
-	closed  chan bool
+	Closing chan bool
+	Closed  chan bool
 }
 
 // NewConsumer returns a new consumer instance.
 func NewConsumer() *Consumer {
 	return &Consumer{
-		closing: make(chan bool),
-		closed:  make(chan bool),
+		Closing: make(chan bool),
+		Closed:  make(chan bool),
 	}
 }
 
 // Consume convert them to event instances, and pass the event to the provided handler.
-func (consumer *Consumer) Consume(messageConsumer MessageConsumer, handler Handler, errorReporter reporter.ErrorReporter) {
+func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.IConsumerGroup, handler Handler, errorReporter reporter.ErrorReporter) {
 
 	go func() {
-		defer close(consumer.closed)
+		defer close(consumer.Closed)
 
 		for {
 			select {
-			case message := <-messageConsumer.Incoming():
+			case message := <-messageConsumer.Channels().Upstream:
 
+				// In the future, the context will be obtained from the kafka message
+				msgCtx := context.Background()
+
+				// Unmarshal message
 				event, err := Unmarshal(message)
 				if err != nil {
-					log.Error(err, log.Data{"message": "failed to unmarshal event"})
+					log.Event(msgCtx, "message unmarshal error", log.ERROR, log.Error(err))
 					continue
 				}
 
 				logData := log.Data{"event": event}
-				log.Debug("event received", logData)
+				log.Event(msgCtx, "event received", log.INFO, logData)
 
-				if err = handler.Handle(event); err != nil {
-					log.ErrorC("failed to handle event", err, logData)
+				// Handle the message
+				if err = handler.Handle(ctx, event); err != nil {
+					log.Event(msgCtx, "failed to handle event", log.ERROR, log.Error(err), logData)
 					if err = errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
-						log.ErrorC("errorReporter.Notify returned an unexpected error", err, logData)
+						log.Event(msgCtx, "errorReporter.Notify returned an unexpected error", log.ERROR, log.Error(err), logData)
 					}
 					continue
 				}
 
-				log.Debug("event processed - committing message", logData)
-				message.Commit()
-				log.Debug("message committed", logData)
+				// On success, commit and release the message
+				log.Event(msgCtx, "event processed - committing message", log.INFO, logData)
+				messageConsumer.CommitAndRelease(message)
+				log.Event(msgCtx, "message committed and kafka consumer released", log.INFO, logData)
 
-			case <-consumer.closing:
-				log.Info("closing event consumer loop", nil)
+			case <-consumer.Closing:
+				log.Event(ctx, "closing event consumer loop", log.INFO)
 				return
 			}
 		}
@@ -81,14 +82,14 @@ func (consumer *Consumer) Close(ctx context.Context) (err error) {
 		ctx = context.Background()
 	}
 
-	close(consumer.closing)
+	close(consumer.Closing)
 
 	select {
-	case <-consumer.closed:
-		log.Info("successfully closed event consumer", nil)
+	case <-consumer.Closed:
+		log.Event(ctx, "successfully closed event consumer", log.INFO)
 		return nil
 	case <-ctx.Done():
-		log.Info("shutdown context time exceeded, skipping graceful shutdown of event consumer", nil)
+		log.Event(ctx, "shutdown context time exceeded, skipping graceful shutdown of event consumer", log.INFO)
 		return errors.New("shutdown context timed out")
 	}
 }

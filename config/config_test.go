@@ -21,18 +21,23 @@ func TestSpec(t *testing.T) {
 			})
 
 			Convey("The values should be set to the expected defaults", func() {
-				So(cfg.AWSRegion, ShouldEqual, "eu-west-1")
-				So(cfg.BindAddr, ShouldEqual, ":21600")
-				So(cfg.EncryptionDisabled, ShouldEqual, false)
-				So(cfg.ErrorProducerTopic, ShouldEqual, "report-events")
-				So(cfg.FileConsumerGroup, ShouldEqual, "dimensions-inserted")
-				So(cfg.FileConsumerTopic, ShouldEqual, "dimensions-inserted")
-				So(cfg.GracefulShutdownTimeout, ShouldEqual, time.Second*5)
-				So(cfg.KafkaAddr, ShouldResemble, []string{"localhost:9092"})
-				So(cfg.ObservationProducerTopic, ShouldEqual, "observation-extracted")
-				So(cfg.VaultAddr, ShouldEqual, "http://localhost:8200")
-				So(cfg.VaultPath, ShouldEqual, "secret/shared/psk")
-				So(cfg.VaultToken, ShouldEqual, "")
+				So(*cfg, ShouldResemble, config.Config{
+					AWSRegion:                "eu-west-1",
+					BindAddr:                 ":21600",
+					EncryptionDisabled:       false,
+					ErrorProducerTopic:       "report-events",
+					FileConsumerGroup:        "dimensions-inserted",
+					FileConsumerTopic:        "dimensions-inserted",
+					GracefulShutdownTimeout:  time.Second * 5,
+					KafkaAddr:                []string{"localhost:9092"},
+					ObservationProducerTopic: "observation-extracted",
+					VaultAddr:                "http://localhost:8200",
+					VaultPath:                "secret/shared/psk",
+					VaultToken:               "",
+					BucketNames:              []string{"dp-frontend-florence-file-uploads"},
+					HealthCheckInterval:      30 * time.Second,
+					HealthCriticalTimeout:    90 * time.Second,
+				})
 			})
 		})
 	})

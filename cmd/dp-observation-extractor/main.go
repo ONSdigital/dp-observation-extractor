@@ -3,157 +3,264 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	kafka "github.com/ONSdigital/dp-kafka"
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
+	"github.com/ONSdigital/dp-observation-extractor/initialise"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-reporter-client/reporter"
-	"github.com/ONSdigital/go-ns/handlers/healthcheck"
-	"github.com/ONSdigital/go-ns/kafka"
-	"github.com/ONSdigital/go-ns/log"
+	vault "github.com/ONSdigital/dp-vault"
 	"github.com/ONSdigital/go-ns/server"
-	"github.com/ONSdigital/go-ns/vault"
-	"github.com/ONSdigital/s3crypto"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/ONSdigital/log.go/log"
 	"github.com/gorilla/mux"
 )
 
-const chunkSize = 5 * 1024 * 1024
+var (
+	// BuildTime represents the time in which the service was built
+	BuildTime string
+	// GitCommit represents the commit (SHA-1) hash of the service that is running
+	GitCommit string
+	// Version represents the version of the service that is running
+	Version string
+)
 
 func main() {
 
 	log.Namespace = "dp-observation-extractor"
+	ctx := context.Background()
 
 	config, err := config.Get()
 	if err != nil {
-		log.Error(err, nil)
+		log.Event(ctx, "error getting config", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 
 	// sensitive fields are omitted from config.String().
-	log.Info("config on startup", log.Data{"config": config})
+	log.Event(ctx, "config on startup", log.INFO, log.Data{"config": config})
 
 	// a channel used to signal a graceful exit is required.
 	errorChannel := make(chan error)
 
-	router := mux.NewRouter()
-	router.Path("/healthcheck").HandlerFunc(healthcheck.Handler)
-	httpServer := server.New(config.BindAddr, router)
+	// Signal channel to know if SIGTERM is triggered
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
-	// Disable auto handling of os signals by the HTTP server. This is handled
-	// in the service so we can gracefully shutdown resources other than just
-	// the HTTP server.
-	httpServer.HandleOSSignals = false
+	// serviceList keeps track of what dependency services have been initialised
+	serviceList := initialise.ExternalServiceList{}
 
-	go func() {
-		log.Debug("starting http server", log.Data{"bind_addr": config.BindAddr})
-		if err = httpServer.ListenAndServe(); err != nil {
-			errorChannel <- err
-		}
-	}()
+	// S3 Session and clients (mapped by bucket name)
+	sess, s3Clients, err := serviceList.GetS3Clients(config)
+	checkForError(ctx, err)
 
-	sess, err := session.NewSession(&aws.Config{Region: &config.AWSRegion})
-	checkForError(err)
+	// Kafka Consumer
+	kafkaConsumer, err := serviceList.GetConsumer(ctx, config)
+	checkForError(ctx, err)
 
-	kafkaConsumer, err := kafka.NewConsumerGroup(config.KafkaAddr,
-		config.FileConsumerTopic,
-		config.FileConsumerGroup,
-		kafka.OffsetNewest)
-	checkForError(err)
+	// Kafka Observation Producer
+	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ObservationProducerTopic, initialise.Observation)
+	checkForError(ctx, err)
 
-	kafkaObservationProducer, err := kafka.NewProducer(config.KafkaAddr, config.ObservationProducerTopic, 0)
-	checkForError(err)
-
-	kafkaErrorProducer, err := kafka.NewProducer(config.KafkaAddr, config.ErrorProducerTopic, 0)
-	checkForError(err)
+	// Kafka Error Reporter
+	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ErrorProducerTopic, initialise.ErrorReporter)
+	checkForError(ctx, err)
 
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
 
-	var cryptoClient event.CryptoClient
+	// Vault Client
 	var vaultClient event.VaultClient
 	if !config.EncryptionDisabled {
-		cryptoClient = s3crypto.New(sess, &s3crypto.Config{HasUserDefinedPSK: true, MultipartChunkSize: chunkSize})
-		vaultClient, err = vault.CreateVaultClient(config.VaultToken, config.VaultAddr, 3)
-		checkForError(err)
+		vaultClient, err = vault.CreateClient(config.VaultToken, config.VaultAddr, 3)
+		checkForError(ctx, err)
 	}
-	client := s3.New(sess)
-	eventHandler := event.NewCSVHandler(client, cryptoClient, vaultClient, observationWriter, config.VaultPath)
+
+	// Create healthcheck object with versionInfo
+	hc, err := serviceList.GetHealthChecker(ctx, BuildTime, GitCommit, Version, config)
+	checkForError(ctx, err)
+
+	registerCheckers(ctx, hc, kafkaConsumer, kafkaObservationProducer, kafkaErrorProducer, vaultClient, s3Clients)
+	checkForError(ctx, err)
+
+	httpServer := startHealthCheck(ctx, hc, config.BindAddr, errorChannel)
+
+	eventHandler := event.NewCSVHandler(sess, s3Clients, vaultClient, observationWriter, config.VaultPath)
 
 	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
-	checkForError(err)
+	checkForError(ctx, err)
 
 	eventConsumer := event.NewConsumer()
-	eventConsumer.Consume(kafkaConsumer, eventHandler, errorReporter)
+	eventConsumer.Consume(ctx, kafkaConsumer, eventHandler, errorReporter)
 
 	shutdownGracefully := func() {
 
-		ctx, cancel := context.WithTimeout(context.Background(), config.GracefulShutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, config.GracefulShutdownTimeout)
+		anyError := false
 
-		// gracefully dispose resources
-		err = eventConsumer.Close(ctx)
-		if err != nil {
-			log.Error(err, nil)
+		// Stop listening to Kafka consumer
+		if serviceList.Consumer {
+			if err = kafkaConsumer.StopListeningToConsumer(ctx); err != nil {
+				anyError = true
+				log.Event(ctx, "bad kafka consumer listen stop", log.ERROR, log.Error(err), log.Data{"topic": config.FileConsumerTopic})
+			} else {
+				log.Event(ctx, "kafka consumer listen stopped", log.INFO, log.Data{"topic": config.FileConsumerTopic})
+			}
 		}
 
-		err = kafkaConsumer.Close(ctx)
-		if err != nil {
-			log.Error(err, nil)
+		// Stop HTTP server
+		if err = httpServer.Shutdown(ctx); err != nil {
+			anyError = true
+			log.Event(ctx, "bad http server stop", log.ERROR, log.Error(err))
+		} else {
+			log.Event(ctx, "http server stopped", log.INFO)
 		}
 
-		err = kafkaErrorProducer.Close(ctx)
-		if err != nil {
-			log.Error(err, nil)
+		// Stop healthcheck
+		hc.Stop()
+		log.Event(ctx, "healthcheck stopped", log.INFO)
+
+		// Close event consumer
+		if err = eventConsumer.Close(ctx); err != nil {
+			anyError = true
+			log.Event(ctx, "bad event consumer stop", log.ERROR, log.Error(err))
+		} else {
+			log.Event(ctx, "event consumer stopped", log.INFO)
 		}
 
-		err = kafkaObservationProducer.Close(ctx)
-		if err != nil {
-			log.Error(err, nil)
+		// Close Kafka consumer
+		if serviceList.Consumer {
+			if err = kafkaConsumer.Close(ctx); err != nil {
+				anyError = true
+				log.Event(ctx, "bad kafka consumer stop", log.ERROR, log.Error(err), log.Data{"topic": config.FileConsumerTopic})
+			} else {
+				log.Event(ctx, "kafka consumer stopped", log.INFO, log.Data{"topic": config.FileConsumerTopic})
+			}
 		}
 
-		err = httpServer.Shutdown(ctx)
-		if err != nil {
-			log.Error(err, nil)
+		// Close Error Reporter Kafka producer
+		if serviceList.ErrorReporterProducer {
+			if err = kafkaErrorProducer.Close(ctx); err != nil {
+				anyError = true
+				log.Event(ctx, "bad kafka error reporter producer stop", log.ERROR, log.Error(err), log.Data{"topic": config.ErrorProducerTopic})
+			} else {
+				log.Event(ctx, "kafka error report producer stopped", log.INFO, log.Data{"topic": config.ErrorProducerTopic})
+			}
+		}
+
+		// Close Observation Kafka producer
+		if serviceList.ObservationProducer {
+			if err = kafkaObservationProducer.Close(ctx); err != nil {
+				anyError = true
+				log.Event(ctx, "bad kafka observation producer stop", log.ERROR, log.Error(err), log.Data{"topic": config.ObservationProducerTopic})
+			} else {
+				log.Event(ctx, "kafka observation producer stopped", log.INFO, log.Data{"topic": config.ObservationProducerTopic})
+			}
 		}
 
 		// cancel the timer in the shutdown context.
 		cancel()
 
-		log.Debug("graceful shutdown was successful", nil)
-		os.Exit(1)
-	}
-
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-
-	for {
-		select {
-		case err := <-kafkaConsumer.Errors():
-			log.ErrorC("kafka consumer", err, nil)
-			shutdownGracefully()
-		case err := <-kafkaObservationProducer.Errors():
-			log.ErrorC("kafka result producer", err, nil)
-			shutdownGracefully()
-		case err := <-kafkaErrorProducer.Errors():
-			log.ErrorC("kafka error producer", err, nil)
-			shutdownGracefully()
-		case err := <-errorChannel:
-			log.ErrorC("error channel", err, nil)
-			shutdownGracefully()
-		case <-signals:
-			log.Error(errors.New("os signal received"), nil)
-			shutdownGracefully()
+		// if any error happened during shutdown, log it and exit with err code
+		if anyError {
+			log.Event(ctx, "graceful shutdown had errors", log.WARN)
+			os.Exit(1)
 		}
+
+		// if all dependencies shutted down successfully, log it and exit with success code
+		log.Event(ctx, "graceful shutdown was successful", log.INFO)
+		os.Exit(0)
 	}
+
+	// Log non-fatal errors in separate go routines
+	kafkaConsumer.Channels().LogErrors(ctx, "kafka consumer error")
+	kafkaObservationProducer.Channels().LogErrors(ctx, "kafka observation producer error")
+	kafkaErrorProducer.Channels().LogErrors(ctx, "kafka error producer error")
+	go func() {
+		for {
+			select {
+			case err := <-errorChannel:
+				log.Event(ctx, "error channel", log.ERROR, log.Error(err))
+			}
+		}
+	}()
+
+	// When a signal is received, shutdown gracefully
+	<-signals
+	log.Event(ctx, "os signal received", log.ERROR, log.Error(errors.New("os signal received")))
+	shutdownGracefully()
 }
 
-func checkForError(err error) {
+// StartHealthCheck sets up the Handler, starts the healthcheck and the http server that serves health endpoint
+func startHealthCheck(ctx context.Context, hc *healthcheck.HealthCheck, bindAddr string, errorChannel chan error) *server.Server {
+	router := mux.NewRouter()
+	router.Path("/health").HandlerFunc(hc.Handler)
+	hc.Start(ctx)
+
+	httpServer := server.New(bindAddr, router)
+	httpServer.HandleOSSignals = false
+
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil {
+			log.Event(ctx, "http server error", log.ERROR, log.Error(err))
+			hc.Stop()
+			errorChannel <- err
+		}
+	}()
+	return httpServer
+}
+
+// RegisterCheckers adds the checkers for the provided clients to the healthcheck object.
+func registerCheckers(ctx context.Context, hc *healthcheck.HealthCheck,
+	kafkaConsumer *kafka.ConsumerGroup,
+	kafkaObservationProducer *kafka.Producer,
+	kafkaErrorProducer *kafka.Producer,
+	vaultClient event.VaultClient,
+	s3Clients map[string]event.S3Client) (err error) {
+
+	hasErrors := false
+
+	if err = hc.AddCheck("Kafka Consumer", kafkaConsumer.Checker); err != nil {
+		hasErrors = true
+		log.Event(nil, "error adding check for kafka consumer checker", log.ERROR, log.Error(err))
+	}
+
+	if err = hc.AddCheck("Kafka Observation Producer", kafkaObservationProducer.Checker); err != nil {
+		hasErrors = true
+		log.Event(nil, "error adding check for kafka observation producer checker", log.ERROR, log.Error(err))
+	}
+
+	if err = hc.AddCheck("Kafka Error Producer", kafkaErrorProducer.Checker); err != nil {
+		hasErrors = true
+		log.Event(nil, "error adding check for kafka error producer checker", log.ERROR, log.Error(err))
+	}
+
+	if vaultClient != nil {
+		if err = hc.AddCheck("Vault", vaultClient.Checker); err != nil {
+			hasErrors = true
+			log.Event(nil, "error adding check for vault checker", log.ERROR, log.Error(err))
+		}
+	}
+
+	for bucketName, s3 := range s3Clients {
+		if err := hc.AddCheck(fmt.Sprintf("S3 bucket %s", bucketName), s3.Checker); err != nil {
+			hasErrors = true
+			log.Event(ctx, "error adding check for s3 client", log.ERROR, log.Error(err))
+		}
+	}
+
+	if hasErrors {
+		return errors.New("Error(s) registering checkers for healthcheck")
+	}
+	return nil
+}
+
+func checkForError(ctx context.Context, err error) {
 	if err != nil {
-		log.Error(err, nil)
+		log.Event(ctx, "error", log.ERROR, log.Error(err))
 		os.Exit(1)
 	}
 }

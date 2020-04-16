@@ -21,6 +21,9 @@ type Config struct {
 	VaultAddr                string        `envconfig:"VAULT_ADDR"`
 	VaultToken               string        `envconfig:"VAULT_TOKEN"                   json:"-"`
 	VaultPath                string        `envconfig:"VAULT_PATH"`
+	BucketNames              []string      `envconfig:"BUCKET_NAMES"                  json:"-"`
+	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
+	HealthCriticalTimeout    time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
 }
 
 // Get the configuration values from the environment or provide the defaults.
@@ -39,6 +42,9 @@ func Get() (*Config, error) {
 		VaultAddr:                "http://localhost:8200",
 		VaultToken:               "",
 		VaultPath:                "secret/shared/psk",
+		BucketNames:              []string{"dp-frontend-florence-file-uploads"},
+		HealthCheckInterval:      30 * time.Second,
+		HealthCriticalTimeout:    90 * time.Second,
 	}
 
 	return cfg, envconfig.Process("", cfg)
