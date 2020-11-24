@@ -63,11 +63,11 @@ func main() {
 	checkForError(ctx, err)
 
 	// Kafka Observation Producer
-	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ObservationProducerTopic, initialise.Observation, config)
+	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.ObservationProducerTopic, initialise.Observation, config)
 	checkForError(ctx, err)
 
 	// Kafka Error Reporter
-	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ErrorProducerTopic, initialise.ErrorReporter, config)
+	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.ErrorProducerTopic, initialise.ErrorReporter, config)
 	checkForError(ctx, err)
 
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)

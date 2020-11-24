@@ -25,6 +25,7 @@ type Config struct {
 	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCriticalTimeout    time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
 	KafkaVersion             string        `envconfig:"KAFKA_VERSION"`
+	KafkaOffsetOldest        bool          `envconfig:"KAFKA_OFFSET"`
 }
 
 // Get the configuration values from the environment or provide the defaults.
@@ -47,6 +48,7 @@ func Get() (*Config, error) {
 		HealthCheckInterval:      30 * time.Second,
 		HealthCriticalTimeout:    90 * time.Second,
 		KafkaVersion:             "1.0.2",
+		KafkaOffsetOldest:        true,
 	}
 
 	return cfg, envconfig.Process("", cfg)
