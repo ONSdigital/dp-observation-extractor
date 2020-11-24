@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	kafkatest "github.com/ONSdigital/dp-kafka/kafkatest"
+	kafkatest "github.com/ONSdigital/dp-kafka/v2/kafkatest"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"github.com/ONSdigital/dp-observation-extractor/observation/observationtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"

@@ -9,7 +9,7 @@ import (
 	"syscall"
 
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	kafka "github.com/ONSdigital/dp-kafka"
+	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/initialise"
@@ -63,11 +63,11 @@ func main() {
 	checkForError(ctx, err)
 
 	// Kafka Observation Producer
-	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ObservationProducerTopic, initialise.Observation)
+	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ObservationProducerTopic, initialise.Observation, config)
 	checkForError(ctx, err)
 
 	// Kafka Error Reporter
-	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ErrorProducerTopic, initialise.ErrorReporter)
+	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.KafkaAddr, config.ErrorProducerTopic, initialise.ErrorReporter, config)
 	checkForError(ctx, err)
 
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)

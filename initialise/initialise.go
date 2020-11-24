@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
-	kafka "github.com/ONSdigital/dp-kafka"
+	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	s3client "github.com/ONSdigital/dp-s3"
@@ -35,6 +35,8 @@ const (
 
 var kafkaProducerNames = []string{"Observation", "ErrorReporter"}
 
+var kafkaOffset = kafka.OffsetOldest
+
 // Values of the kafka producers names
 func (k KafkaProducerName) String() string {
 	return kafkaProducerNames[k]
@@ -42,14 +44,19 @@ func (k KafkaProducerName) String() string {
 
 // GetConsumer returns a kafka consumer, which might not be initialised
 func (e *ExternalServiceList) GetConsumer(ctx context.Context, cfg *config.Config) (kafkaConsumer *kafka.ConsumerGroup, err error) {
+
+	cgConfig := &kafka.ConsumerGroupConfig{
+		Offset:       &kafkaOffset,
+		KafkaVersion: &cfg.KafkaVersion,
+	}
+
 	kafkaConsumer, err = kafka.NewConsumerGroup(
 		ctx,
 		cfg.KafkaAddr,
 		cfg.FileConsumerTopic,
 		cfg.FileConsumerGroup,
-		kafka.OffsetNewest,
-		true,
-		kafka.CreateConsumerGroupChannels(true),
+		kafka.CreateConsumerGroupChannels(1),
+		cgConfig,
 	)
 	if err != nil {
 		return
@@ -61,8 +68,14 @@ func (e *ExternalServiceList) GetConsumer(ctx context.Context, cfg *config.Confi
 }
 
 // GetProducer returns a kafka producer, which might not be initialised
-func (e *ExternalServiceList) GetProducer(ctx context.Context, brokers []string, topic string, name KafkaProducerName) (kafkaProducer *kafka.Producer, err error) {
-	producer, err := kafka.NewProducer(ctx, brokers, topic, 0, kafka.CreateProducerChannels())
+func (e *ExternalServiceList) GetProducer(ctx context.Context, brokers []string, topic string, name KafkaProducerName, cfg *config.Config) (kafkaProducer *kafka.Producer, err error) {
+	pConfig := &kafka.ProducerConfig{
+		KafkaVersion: &cfg.KafkaVersion,
+	}
+
+	pChannels := kafka.CreateProducerChannels()
+
+	producer, err := kafka.NewProducer(ctx, brokers, topic, pChannels, pConfig)
 	if err != nil {
 		log.Event(ctx, "new kafka producer returned an error", log.FATAL, log.Error(err), log.Data{"topic": topic})
 		return nil, err

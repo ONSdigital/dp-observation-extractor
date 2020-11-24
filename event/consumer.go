@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	kafka "github.com/ONSdigital/dp-kafka"
+	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/dp-reporter-client/reporter"
 	"github.com/ONSdigital/log.go/log"
@@ -46,6 +46,7 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 				event, err := Unmarshal(message)
 				if err != nil {
 					log.Event(msgCtx, "message unmarshal error", log.ERROR, log.Error(err))
+					message.CommitAndRelease()
 					continue
 				}
 
@@ -58,12 +59,13 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 					if err = errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
 						log.Event(msgCtx, "errorReporter.Notify returned an unexpected error", log.ERROR, log.Error(err), logData)
 					}
+					message.CommitAndRelease()
 					continue
 				}
 
 				// On success, commit and release the message
 				log.Event(msgCtx, "event processed - committing message", log.INFO, logData)
-				messageConsumer.CommitAndRelease(message)
+				message.CommitAndRelease()
 				log.Event(msgCtx, "message committed and kafka consumer released", log.INFO, logData)
 
 			case <-consumer.Closing:
