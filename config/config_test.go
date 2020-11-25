@@ -40,7 +40,7 @@ func TestSpec(t *testing.T) {
 					BucketNames:              []string{"dp-frontend-florence-file-uploads"},
 					HealthCheckInterval:      30 * time.Second,
 					HealthCriticalTimeout:    90 * time.Second,
-					KafkaOffsetOldest:        true,
+					KafkaOffset:              true,
 				})
 			})
 		})
