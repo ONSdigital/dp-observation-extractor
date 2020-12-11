@@ -24,6 +24,8 @@ type Config struct {
 	BucketNames              []string      `envconfig:"BUCKET_NAMES"                  json:"-"`
 	HealthCheckInterval      time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
 	HealthCriticalTimeout    time.Duration `envconfig:"HEALTHCHECK_CRITICAL_TIMEOUT"`
+	KafkaVersion             string        `envconfig:"KAFKA_VERSION"`
+	KafkaOffsetOldest        bool          `envconfig:"KAFKA_OFFSET_OLDEST"`
 }
 
 // Get the configuration values from the environment or provide the defaults.
@@ -45,6 +47,8 @@ func Get() (*Config, error) {
 		BucketNames:              []string{"dp-frontend-florence-file-uploads"},
 		HealthCheckInterval:      30 * time.Second,
 		HealthCriticalTimeout:    90 * time.Second,
+		KafkaVersion:             "1.0.2",
+		KafkaOffsetOldest:        true,
 	}
 
 	return cfg, envconfig.Process("", cfg)

@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -10,9 +11,10 @@ import (
 
 func TestSpec(t *testing.T) {
 
-	cfg, err := config.Get()
-
 	Convey("Given an environment with no environment variables set", t, func() {
+
+		os.Clearenv()
+		cfg, err := config.Get()
 
 		Convey("When the config values are retrieved", func() {
 
@@ -30,6 +32,7 @@ func TestSpec(t *testing.T) {
 					FileConsumerTopic:        "dimensions-inserted",
 					GracefulShutdownTimeout:  time.Second * 5,
 					KafkaAddr:                []string{"localhost:9092"},
+					KafkaVersion:             "1.0.2",
 					ObservationProducerTopic: "observation-extracted",
 					VaultAddr:                "http://localhost:8200",
 					VaultPath:                "secret/shared/psk",
@@ -37,6 +40,7 @@ func TestSpec(t *testing.T) {
 					BucketNames:              []string{"dp-frontend-florence-file-uploads"},
 					HealthCheckInterval:      30 * time.Second,
 					HealthCriticalTimeout:    90 * time.Second,
+					KafkaOffsetOldest:        true,
 				})
 			})
 		})

@@ -3,7 +3,7 @@ package event_test
 import (
 	"context"
 
-	"github.com/ONSdigital/dp-kafka/kafkatest"
+	"github.com/ONSdigital/dp-kafka/v2/kafkatest"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	"github.com/ONSdigital/dp-observation-extractor/event/eventtest"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
@@ -26,10 +26,13 @@ func TestConsume_UnmarshallError(t *testing.T) {
 
 		expectedEvent := getExampleEvent()
 
+		messageIncorrect := kafkatest.NewMessage([]byte("invalid schema"), 0)
+		messageCorrect := kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
+
 		// Make sure the invalid schema is sent first
 		go func() {
-			messageConsumer.Channels().Upstream <- kafkatest.NewMessage([]byte("invalid schema"), 0)
-			messageConsumer.Channels().Upstream <- kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
+			messageConsumer.Channels().Upstream <- messageIncorrect
+			messageConsumer.Channels().Upstream <- messageCorrect
 		}()
 
 		Convey("When consume messages is called", func() {
@@ -39,7 +42,8 @@ func TestConsume_UnmarshallError(t *testing.T) {
 
 			// Wait for handler to receive message, and message to be successfully released
 			<-handler.ChHandle
-			<-messageConsumer.Channels().UpstreamDone
+			<-messageCorrect.UpstreamDone()
+			<-messageIncorrect.UpstreamDone()
 
 			Convey("Only the valid event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
@@ -123,7 +127,7 @@ func TestConsume(t *testing.T) {
 			})
 
 			Convey("The message is committed, and consumer group is released", func() {
-				So(len(messageConsumer.CommitAndReleaseCalls()), ShouldEqual, 1)
+				So(len(message.CommitAndReleaseCalls()), ShouldEqual, 1)
 			})
 
 			Convey("And errorHandler is never called", func() {
