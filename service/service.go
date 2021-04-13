@@ -23,19 +23,27 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 
 	// S3 Session and clients (mapped by bucket name)
 	sess, s3Clients, err := serviceList.GetS3Clients(config)
-	checkForError(ctx, err)
+	if err != nil {
+		return err
+	}
 
 	// Kafka Consumer
 	kafkaConsumer, err := serviceList.GetConsumer(ctx, config)
-	checkForError(ctx, err)
+	if err != nil {
+		return err
+	}
 
 	// Kafka Observation Producer
 	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.ObservationProducerTopic, initialise.Observation, config)
-	checkForError(ctx, err)
+	if err != nil {
+		return err
+	}
 
 	// Kafka Error Reporter
 	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.ErrorProducerTopic, initialise.ErrorReporter, config)
-	checkForError(ctx, err)
+	if err != nil {
+		return err
+	}
 
 	observationWriter := observation.NewMessageWriter(kafkaObservationProducer)
 
@@ -43,27 +51,35 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 	var vaultClient event.VaultClient
 	if !config.EncryptionDisabled {
 		vaultClient, err = vault.CreateClient(config.VaultToken, config.VaultAddr, 3)
-		checkForError(ctx, err)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create healthcheck object with versionInfo
 	hc, err := serviceList.GetHealthChecker(ctx, BuildTime, GitCommit, Version, config)
-	checkForError(ctx, err)
+	if err != nil {
+		return err
+	}
 
 	registerCheckers(ctx, hc, kafkaConsumer, kafkaObservationProducer, kafkaErrorProducer, vaultClient, s3Clients)
-	checkForError(ctx, err)
+	if err != nil {
+		return err
+	}
 
 	httpServer := startHealthCheck(ctx, hc, config.BindAddr, errorChannel)
 
 	eventHandler := event.NewCSVHandler(sess, s3Clients, vaultClient, observationWriter, config.VaultPath)
 
 	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
-	checkForError(ctx, err)
+	if err != nil {
+		return err
+	}
 
 	eventConsumer := event.NewConsumer()
 	eventConsumer.Consume(ctx, kafkaConsumer, eventHandler, errorReporter)
 
-	shutdownGracefully := func() {
+	shutdownGracefully := func() error {
 
 		ctx, cancel := context.WithTimeout(ctx, config.GracefulShutdownTimeout)
 		anyError := false
@@ -134,12 +150,12 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 		// if any error happened during shutdown, log it and exit with err code
 		if anyError {
 			log.Event(ctx, "graceful shutdown had errors", log.WARN)
-			os.Exit(1)
+			return errors.New("Failed to shutdown gracefully")
 		}
 
 		// if all dependencies shutted down successfully, log it and exit with success code
 		log.Event(ctx, "graceful shutdown was successful", log.INFO)
-		os.Exit(0)
+		return nil
 	}
 
 	// Log non-fatal errors in separate go routines
@@ -158,8 +174,8 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 	// When a signal is received, shutdown gracefully
 	<-signals
 	log.Event(ctx, "os signal received", log.ERROR, log.Error(errors.New("os signal received")))
-	shutdownGracefully()
-	return nil
+
+	return shutdownGracefully()
 }
 
 // StartHealthCheck sets up the Handler, starts the healthcheck and the http server that serves health endpoint
@@ -224,11 +240,4 @@ func registerCheckers(ctx context.Context, hc *healthcheck.HealthCheck,
 		return errors.New("Error(s) registering checkers for healthcheck")
 	}
 	return nil
-}
-
-func checkForError(ctx context.Context, err error) {
-	if err != nil {
-		log.Event(ctx, "error", log.ERROR, log.Error(err))
-		os.Exit(1)
-	}
 }
