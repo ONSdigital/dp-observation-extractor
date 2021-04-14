@@ -22,7 +22,17 @@ type ExternalServiceList struct {
 	Vault                 bool
 	HealthCheck           bool
 	S3Clients             bool
+	Init                  Initialiser
 }
+type Initialiser interface {
+	DoGetConsumer(ctx context.Context, cfg *config.Config) (kafkaConsumer kafka.IConsumerGroup, err error)
+	DoGetProducer(ctx context.Context, topic string, name KafkaProducerName, cfg *config.Config) (kafkaProducer kafka.IProducer, err error)
+	DoGetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error)
+	DoGetHealthChecker(ctx context.Context, buildTime, gitCommit, version string, cfg *config.Config) (*healthcheck.HealthCheck, error)
+}
+
+// Init implements the Initialiser interface to initialise dependencies
+type Init struct{}
 
 // KafkaProducerName represents a type for kafka producer name used by iota constants
 type KafkaProducerName int
@@ -43,8 +53,66 @@ func (k KafkaProducerName) String() string {
 }
 
 // GetConsumer returns a kafka consumer, which might not be initialised
-func (e *ExternalServiceList) GetConsumer(ctx context.Context, cfg *config.Config) (kafkaConsumer *kafka.ConsumerGroup, err error) {
+func (e *ExternalServiceList) GetConsumer(ctx context.Context, cfg *config.Config) (kafkaConsumer kafka.IConsumerGroup, err error) {
 
+	kafkaConsumer, err = e.Init.DoGetConsumer(ctx, cfg)
+	if err != nil {
+		return
+	}
+
+	e.Consumer = true
+
+	return
+}
+
+// GetProducer returns a kafka producer, which might not be initialised
+func (e *ExternalServiceList) GetProducer(ctx context.Context, topic string, name KafkaProducerName, cfg *config.Config) (kafkaProducer kafka.IProducer, err error) {
+
+	producer, err := e.Init.DoGetProducer(ctx, topic, name, cfg)
+	if err != nil {
+		log.Event(ctx, "new kafka producer returned an error", log.FATAL, log.Error(err), log.Data{"topic": topic})
+		return nil, err
+	}
+
+	switch {
+	case name == Observation:
+		e.ObservationProducer = true
+	case name == ErrorReporter:
+		e.ErrorReporterProducer = true
+	default:
+		err = fmt.Errorf("kafka producer name not recognised: '%s'. valid names: %v", name.String(), kafkaProducerNames)
+	}
+
+	return producer, nil
+}
+
+// GetS3Clients returns a map of AWS S3 clients corresponding to the list of BucketNames
+// and the AWS region provided in the configuration. If encryption is enabled, the s3clients will be cryptoclients.
+func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error) {
+
+	awsSession, s3Clients, err = e.Init.DoGetS3Clients(cfg)
+	if err != nil {
+		return
+	}
+	e.S3Clients = true
+
+	return
+}
+
+// GetHealthChecker creates a new healthcheck object
+func (e *ExternalServiceList) GetHealthChecker(ctx context.Context, buildTime, gitCommit, version string, cfg *config.Config) (*healthcheck.HealthCheck, error) {
+
+	hc, err := e.Init.DoGetHealthChecker(ctx, buildTime, gitCommit, version, cfg)
+	if err != nil {
+		log.Event(ctx, "failed to create versionInfo for healthcheck", log.FATAL, log.Error(err))
+		return nil, err
+	}
+	e.HealthCheck = true
+
+	return hc, nil
+}
+
+func (i *Init) DoGetConsumer(ctx context.Context, cfg *config.Config) (kafkaConsumer kafka.IConsumerGroup, err error) {
 	kafkaOffset := kafka.OffsetNewest
 
 	if cfg.KafkaOffsetOldest {
@@ -67,41 +135,20 @@ func (e *ExternalServiceList) GetConsumer(ctx context.Context, cfg *config.Confi
 	if err != nil {
 		return
 	}
-
-	e.Consumer = true
-
 	return
 }
 
-// GetProducer returns a kafka producer, which might not be initialised
-func (e *ExternalServiceList) GetProducer(ctx context.Context, topic string, name KafkaProducerName, cfg *config.Config) (kafkaProducer *kafka.Producer, err error) {
+func (i *Init) DoGetProducer(ctx context.Context, topic string, name KafkaProducerName, cfg *config.Config) (kafkaProducer kafka.IProducer, err error) {
 	pConfig := &kafka.ProducerConfig{
 		KafkaVersion: &cfg.KafkaVersion,
 	}
 
 	pChannels := kafka.CreateProducerChannels()
 
-	producer, err := kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
-	if err != nil {
-		log.Event(ctx, "new kafka producer returned an error", log.FATAL, log.Error(err), log.Data{"topic": topic})
-		return nil, err
-	}
-
-	switch {
-	case name == Observation:
-		e.ObservationProducer = true
-	case name == ErrorReporter:
-		e.ErrorReporterProducer = true
-	default:
-		err = fmt.Errorf("kafka producer name not recognised: '%s'. valid names: %v", name.String(), kafkaProducerNames)
-	}
-
-	return producer, nil
+	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
 }
 
-// GetS3Clients returns a map of AWS S3 clients corresponding to the list of BucketNames
-// and the AWS region provided in the configuration. If encryption is enabled, the s3clients will be cryptoclients.
-func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error) {
+func (i *Init) DoGetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error) {
 	// establish AWS session
 	awsSession, err = session.NewSession(&aws.Config{Region: &cfg.AWSRegion})
 	if err != nil {
@@ -113,20 +160,16 @@ func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *sess
 	for _, bucketName := range cfg.BucketNames {
 		s3Clients[bucketName] = s3client.NewClientWithSession(bucketName, !cfg.EncryptionDisabled, awsSession)
 	}
-	e.S3Clients = true
 
 	return
 }
 
-// GetHealthChecker creates a new healthcheck object
-func (e *ExternalServiceList) GetHealthChecker(ctx context.Context, buildTime, gitCommit, version string, cfg *config.Config) (*healthcheck.HealthCheck, error) {
+func (i *Init) DoGetHealthChecker(ctx context.Context, buildTime, gitCommit, version string, cfg *config.Config) (*healthcheck.HealthCheck, error) {
 	versionInfo, err := healthcheck.NewVersionInfo(buildTime, gitCommit, version)
 	if err != nil {
-		log.Event(ctx, "failed to create versionInfo for healthcheck", log.FATAL, log.Error(err))
 		return nil, err
 	}
 	hc := healthcheck.New(versionInfo, cfg.HealthCriticalTimeout, cfg.HealthCheckInterval)
-	e.HealthCheck = true
 
 	return &hc, nil
 }

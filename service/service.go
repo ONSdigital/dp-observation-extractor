@@ -19,7 +19,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Run(ctx context.Context, config *config.Config, serviceList initialise.ExternalServiceList, signals chan os.Signal, errorChannel chan error, BuildTime string, GitCommit string, Version string) error {
+func Run(ctx context.Context, config *config.Config, serviceList *initialise.ExternalServiceList, signals chan os.Signal, errorChannel chan error, BuildTime string, GitCommit string, Version string) error {
 
 	// S3 Session and clients (mapped by bucket name)
 	sess, s3Clients, err := serviceList.GetS3Clients(config)
@@ -199,9 +199,9 @@ func startHealthCheck(ctx context.Context, hc *healthcheck.HealthCheck, bindAddr
 
 // RegisterCheckers adds the checkers for the provided clients to the healthcheck object.
 func registerCheckers(ctx context.Context, hc *healthcheck.HealthCheck,
-	kafkaConsumer *kafka.ConsumerGroup,
-	kafkaObservationProducer *kafka.Producer,
-	kafkaErrorProducer *kafka.Producer,
+	kafkaConsumer kafka.IConsumerGroup,
+	kafkaObservationProducer kafka.IProducer,
+	kafkaErrorProducer kafka.IProducer,
 	vaultClient event.VaultClient,
 	s3Clients map[string]event.S3Client) (err error) {
 

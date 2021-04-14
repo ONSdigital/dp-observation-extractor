@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/ONSdigital/dp-api-clients-go v1.34.2 // indirect
+	github.com/ONSdigital/dp-component-test v0.3.0
 	github.com/ONSdigital/dp-healthcheck v1.0.5
 	github.com/ONSdigital/dp-kafka/v2 v2.1.2
 	github.com/ONSdigital/dp-reporter-client v1.0.1
@@ -13,6 +14,7 @@ require (
 	github.com/ONSdigital/log.go v1.0.1
 	github.com/Shopify/sarama v1.28.0 // indirect
 	github.com/aws/aws-sdk-go v1.38.1
+	github.com/cucumber/godog v0.10.0
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/gorilla/mux v1.8.0
@@ -27,8 +29,10 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/klauspost/compress v1.11.12 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/rdumont/assistdog v0.0.0-20201106100018-168b06230d14
 	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/smartystreets/goconvey v1.6.4
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210317152858-513c2a44f670 // indirect
 	golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4 // indirect
 	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
