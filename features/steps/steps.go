@@ -2,8 +2,12 @@ package steps
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -13,42 +17,47 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/service"
 	"github.com/cucumber/godog"
 	"github.com/rdumont/assistdog"
-	"github.com/stretchr/testify/assert"
 )
 
 func (c *Component) RegisterSteps(ctx *godog.ScenarioContext) {
-	ctx.Step(`^these hello events are consumed:$`, c.theseHelloEventsAreConsumed)
-	ctx.Step(`^I should receive a hello-world response$`, c.iShouldReceiveAHelloworldResponse)
-}
-func (c *Component) iShouldReceiveAHelloworldResponse() error {
-
-	assert.Equal(c, "Hello, Tim!", "")
-
-	return c.StepError()
+	ctx.Step(`^I have a file in a bucket with name "([^"]*)" and content:$`, c.iHaveAFileInABucketWithNameAndContent)
+	ctx.Step(`^I recieve a message containing the file name "([^"]*)"$`, c.iRecieveAMessageContainingTheFileName)
+	ctx.Step(`^these messages are sent to the output message queue:$`, c.theseMessagesAreSentToTheOutputMessageQueue)
 }
 
-func (c *Component) theseHelloEventsAreConsumed(table *godog.Table) error {
+func (c *Component) iHaveAFileInABucketWithNameAndContent(filename string, content *godog.DocString) error {
+	c.S3Client.GetWithPSKFunc = func(key string, psk []byte) (io.ReadCloser, *int64, error) {
+		fmt.Println("=================================")
+		fmt.Println(key)
+		fmt.Println("=================================")
+		length := int64(len(content.Content))
+		return ioutil.NopCloser(strings.NewReader(content.Content)), &length, nil
+	}
+	return nil
+}
 
-	observationEvents, err := c.convertToHelloEvents(table)
-	if err != nil {
-		return err
+func (c *Component) iRecieveAMessageContainingTheFileName(filename string) error {
+
+	event := &event.DimensionsInserted{
+		FileURL:    filename,
+		InstanceID: "1",
 	}
 
 	signals := registerInterrupt()
 
-	// run application in separate goroutine
 	go func() {
-		err = service.Run(context.Background(), c.cfg, c.serviceList, c.signals, c.errorChan, "", "", "")
+		err := service.Run(context.Background(), c.cfg, c.serviceList, c.signals, c.errorChan, "", "", "")
+		if err != nil {
+			panic(err)
+		}
 	}()
 
-	// consume extracted observations
-	for _, e := range observationEvents {
-		if err := c.sendToConsumer(e); err != nil {
-			return err
-		}
+	if err := c.sendToConsumer(event); err != nil {
+		fmt.Println("=============================")
+		return err
 	}
 
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(3000 * time.Millisecond)
 
 	// kill application
 	signals <- os.Interrupt
@@ -56,7 +65,11 @@ func (c *Component) theseHelloEventsAreConsumed(table *godog.Table) error {
 	return nil
 }
 
-func (c *Component) convertToHelloEvents(table *godog.Table) ([]*event.DimensionsInserted, error) {
+func (c *Component) theseMessagesAreSentToTheOutputMessageQueue(table *godog.Table) error {
+	return godog.ErrPending
+}
+
+func (c *Component) convertToEvents(table *godog.Table) ([]*event.DimensionsInserted, error) {
 	assist := assistdog.NewDefault()
 	events, err := assist.CreateSlice(&event.DimensionsInserted{}, table)
 	if err != nil {
@@ -66,7 +79,7 @@ func (c *Component) convertToHelloEvents(table *godog.Table) ([]*event.Dimension
 }
 
 func (c *Component) sendToConsumer(e *event.DimensionsInserted) error {
-	bytes, err := schema.ObservationExtractedEvent.Marshal(e)
+	bytes, err := schema.DimensionsInsertedEvent.Marshal(e)
 	if err != nil {
 		return err
 	}

@@ -20,11 +20,13 @@ type Component struct {
 	componenttest.ErrorFeature
 	serviceList   *initialise.ExternalServiceList
 	KafkaConsumer kafka.IConsumerGroup
+	KafkaProducer kafka.IProducer
 	killChannel   chan os.Signal
 	apiFeature    *componenttest.APIFeature
 	errorChan     chan error
 	signals       chan os.Signal
 	cfg           *config.Config
+	S3Client      *s3mocks.S3ClientMock
 }
 
 func NewComponent() *Component {
@@ -41,6 +43,7 @@ func NewComponent() *Component {
 	}
 
 	c.cfg = cfg
+	c.S3Client = &s3mocks.S3ClientMock{}
 
 	initialiser := &mock.InitialiserMock{
 		DoGetConsumerFunc:      c.DoGetConsumer,
@@ -65,7 +68,7 @@ func (c *Component) Reset() {
 }
 
 func (c *Component) DoGetHealthCheck(ctx context.Context, buildTime string, gitCommit string, version string, cfg *config.Config) (*healthcheck.HealthCheck, error) {
-	versionInfo, err := healthcheck.NewVersionInfo(buildTime, gitCommit, version)
+	versionInfo, err := healthcheck.NewVersionInfo("1234", "gitCommit", "version")
 	if err != nil {
 		return nil, err
 	}
@@ -79,33 +82,33 @@ func (c *Component) DoGetConsumer(ctx context.Context, cfg *config.Config) (kafk
 	return c.KafkaConsumer, nil
 }
 
-func funcCheck(ctx context.Context, state *healthcheck.CheckState) error {
-	return nil
-}
-
 func (c *Component) DoGetProducer(ctx context.Context, topic string, name initialise.KafkaProducerName, cfg *config.Config) (kafkaProducer kafka.IProducer, err error) {
-	pConfig := &kafka.ProducerConfig{
-		KafkaVersion: &cfg.KafkaVersion,
+	channels := &kafka.ProducerChannels{
+		Output: make(chan []byte),
+	}
+	c.KafkaProducer = &kafkatest.IProducerMock{
+		ChannelsFunc: func() *kafka.ProducerChannels {
+			return channels
+		},
+		CloseFunc:   funcClose,
+		CheckerFunc: funcCheck,
 	}
 
-	pChannels := kafka.CreateProducerChannels()
-
-	return kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
+	return c.KafkaProducer, nil
 }
 
 func (c *Component) DoGetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error) {
-	// establish AWS session
-	// awsSession, err = session.NewSession(&aws.Config{Region: &cfg.AWSRegion})
-	// if err != nil {
-	// 	return
-	// }
-
-	s3client := &s3mocks.S3ClientMock{}
-
-	// create S3 clients for expected bucket names, so that they can be health-checked
-	s3Clients["bucket_name"] = s3client
-
+	s3Clients = make(map[string]event.S3Client)
+	s3Clients["bucket_name"] = c.S3Client
 	return
+}
+
+func funcClose(ctx context.Context) error {
+	return nil
+}
+
+func funcCheck(ctx context.Context, state *healthcheck.CheckState) error {
+	return nil
 }
 
 // func NewS3Client() {
