@@ -43,7 +43,7 @@ func main() {
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
 
 	// serviceList keeps track of what dependency services have been initialised
-	serviceList := initialise.ExternalServiceList{Init: &initialise.Init{}}
+	serviceList := &initialise.ExternalServiceList{Init: &initialise.Init{}}
 
 	err = service.Run(ctx, config, serviceList, signals, errorChannel, BuildTime, GitCommit, Version)
 	if err != nil {

@@ -45,6 +45,10 @@ acceptance:
 test:
 	go test -cover -race ./...
 
+.PHONY: test-component
+test-component:
+	go test -race -cover -coverpkg=github.com/ONSdigital/dp-observation-extractor/... -component
+
 .PHONY: vault
 vault:
 	@echo "$(VAULT_POLICY)"
