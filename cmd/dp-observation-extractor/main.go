@@ -9,7 +9,7 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/initialise"
 	"github.com/ONSdigital/dp-observation-extractor/service"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 var (
@@ -28,12 +28,12 @@ func main() {
 
 	config, err := config.Get()
 	if err != nil {
-		log.Event(ctx, "error getting config", log.ERROR, log.Error(err))
+		log.Error(ctx, "error getting config", err)
 		os.Exit(1)
 	}
 
 	// sensitive fields are omitted from config.String().
-	log.Event(ctx, "config on startup", log.INFO, log.Data{"config": config})
+	log.Info(ctx, "config on startup", log.Data{"config": config})
 
 	// a channel used to signal a graceful exit is required.
 	errorChannel := make(chan error)
@@ -47,7 +47,7 @@ func main() {
 
 	err = service.Run(ctx, config, serviceList, signals, errorChannel, BuildTime, GitCommit, Version)
 	if err != nil {
-		log.Event(ctx, "error running service", log.ERROR, log.Error(err))
+		log.Error(ctx, "error running service", err)
 		os.Exit(1)
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	s3client "github.com/ONSdigital/dp-s3"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
@@ -59,12 +59,12 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 	url := event.FileURL
 
 	logData := log.Data{"url": url, "event": event}
-	log.Event(ctx, "getting file", log.INFO, logData)
+	log.Info(ctx, "getting file", logData)
 
 	// parse the url - expected format; s3://bucket/k/e/y
 	s3Url, err := s3client.ParseURL(url, s3client.AliasVirtualHostedStyle)
 	if err != nil {
-		log.Event(ctx, "unable to find bucket and filename in event file url", log.ERROR, log.Error(err), logData)
+		log.Error(ctx, "unable to find bucket and filename in event file url", err, logData)
 		return err
 	}
 	logData["bucket"] = s3Url.BucketName
@@ -73,7 +73,7 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 	// Get S3 Client corresponding to the Bucket extracted from URL, or create one if not available
 	s3, ok := handler.s3Clients[s3Url.BucketName]
 	if !ok {
-		log.Event(ctx, "retreiving data from unexpected s3 bucket", log.WARN, log.Data{"RequestedBucket": s3Url.BucketName})
+		log.Warn(ctx, "retreiving data from unexpected s3 bucket", log.Data{"RequestedBucket": s3Url.BucketName})
 		s3 = s3client.NewClientWithSession(s3Url.BucketName, handler.vaultClient != nil, handler.AwsSession)
 	}
 
@@ -85,37 +85,37 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 		vaultKey := "key"
 		logData["vault_path"] = vaultPath
 
-		log.Event(ctx, "attempting to get psk from vault", log.INFO, logData)
+		log.Info(ctx, "attempting to get psk from vault", logData)
 		pskStr, err := handler.vaultClient.ReadKey(vaultPath, vaultKey)
 		if err != nil {
 			return err
 		}
 
-		log.Event(ctx, "got psk", log.INFO, logData)
+		log.Info(ctx, "got psk", logData)
 		psk, err := hex.DecodeString(pskStr)
 		if err != nil {
 			return err
 		}
 
-		log.Event(ctx, "attempting to get S3 object with psk", log.INFO, logData)
+		log.Info(ctx, "attempting to get S3 object with psk", logData)
 
 		file, contentLength, err = s3.GetWithPSK(s3Url.Key, psk)
 		if err != nil {
-			log.Event(ctx, "encountered error retrieving and decrypting csv file", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "encountered error retrieving and decrypting csv file", err, logData)
 			return err
 		}
 	} else {
-		log.Event(ctx, "attempting to get S3 object", log.INFO, logData)
+		log.Info(ctx, "attempting to get S3 object", logData)
 		file, contentLength, err = s3.Get(s3Url.Key)
 		if err != nil {
-			log.Event(ctx, "unable to retrieve s3 output object", log.ERROR, log.Error(err), logData)
+			log.Error(ctx, "unable to retrieve s3 output object", err, logData)
 			return err
 		}
 	}
 	defer file.Close()
 
 	logData["content_length"] = getContentLengthStr(contentLength)
-	log.Event(ctx, "file read from s3", log.INFO, logData)
+	log.Info(ctx, "file read from s3", logData)
 
 	observationReader := observation.NewCSVReader(file)
 

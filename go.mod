@@ -10,10 +10,9 @@ require (
 	github.com/ONSdigital/dp-s3 v1.5.1
 	github.com/ONSdigital/dp-vault v1.1.2
 	github.com/ONSdigital/go-ns v0.0.0-20200902154605-290c8b5ba5eb
-	github.com/ONSdigital/log.go v1.0.1
+	github.com/ONSdigital/log.go/v2 v2.0.9
 	github.com/Shopify/sarama v1.28.0 // indirect
 	github.com/aws/aws-sdk-go v1.38.1
-	github.com/fatih/color v1.10.0 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -22,7 +21,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
-	github.com/hokaccha/go-prettyjson v0.0.0-20210113012101-fb4e108d2519 // indirect
 	github.com/johnnadratowski/golang-neo4j-bolt-driver v0.0.0-20200323142034-807201386efa
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/klauspost/compress v1.11.12 // indirect
