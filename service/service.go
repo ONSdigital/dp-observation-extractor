@@ -28,19 +28,19 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 	}
 
 	// Kafka Consumer
-	kafkaConsumer, err := serviceList.GetConsumer(ctx, config)
+	kafkaConsumer, err := serviceList.GetConsumer(ctx, &config.KafkaConfig)
 	if err != nil {
 		return err
 	}
 
 	// Kafka Observation Producer
-	kafkaObservationProducer, err := serviceList.GetProducer(ctx, config.ObservationProducerTopic, initialise.Observation, config)
+	kafkaObservationProducer, err := serviceList.GetProducer(ctx, &config.KafkaConfig, config.KafkaConfig.ObservationProducerTopic, initialise.Observation)
 	if err != nil {
 		return err
 	}
 
 	// Kafka Error Reporter
-	kafkaErrorProducer, err := serviceList.GetProducer(ctx, config.ErrorProducerTopic, initialise.ErrorReporter, config)
+	kafkaErrorProducer, err := serviceList.GetProducer(ctx, &config.KafkaConfig, config.KafkaConfig.ErrorProducerTopic, initialise.ErrorReporter)
 	if err != nil {
 		return err
 	}
@@ -88,9 +88,9 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 		if serviceList.Consumer {
 			if err = kafkaConsumer.StopListeningToConsumer(ctx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka consumer listen stop", err, log.Data{"topic": config.FileConsumerTopic})
+				log.Error(ctx, "bad kafka consumer listen stop", err, log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
 			} else {
-				log.Info(ctx, "kafka consumer listen stopped", log.Data{"topic": config.FileConsumerTopic})
+				log.Info(ctx, "kafka consumer listen stopped", log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
 			}
 		}
 
@@ -118,9 +118,9 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 		if serviceList.Consumer {
 			if err = kafkaConsumer.Close(ctx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka consumer stop", err, log.Data{"topic": config.FileConsumerTopic})
+				log.Error(ctx, "bad kafka consumer stop", err, log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
 			} else {
-				log.Info(ctx, "kafka consumer stopped", log.Data{"topic": config.FileConsumerTopic})
+				log.Info(ctx, "kafka consumer stopped", log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
 			}
 		}
 
@@ -128,9 +128,9 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 		if serviceList.ErrorReporterProducer {
 			if err = kafkaErrorProducer.Close(ctx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka error reporter producer stop", err, log.Data{"topic": config.ErrorProducerTopic})
+				log.Error(ctx, "bad kafka error reporter producer stop", err, log.Data{"topic": config.KafkaConfig.ErrorProducerTopic})
 			} else {
-				log.Info(ctx, "kafka error report producer stopped", log.Data{"topic": config.ErrorProducerTopic})
+				log.Info(ctx, "kafka error report producer stopped", log.Data{"topic": config.KafkaConfig.ErrorProducerTopic})
 			}
 		}
 
@@ -138,9 +138,9 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 		if serviceList.ObservationProducer {
 			if err = kafkaObservationProducer.Close(ctx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka observation producer stop", err, log.Data{"topic": config.ObservationProducerTopic})
+				log.Error(ctx, "bad kafka observation producer stop", err, log.Data{"topic": config.KafkaConfig.ObservationProducerTopic})
 			} else {
-				log.Info(ctx, "kafka observation producer stopped", log.Data{"topic": config.ObservationProducerTopic})
+				log.Info(ctx, "kafka observation producer stopped", log.Data{"topic": config.KafkaConfig.ObservationProducerTopic})
 			}
 		}
 
