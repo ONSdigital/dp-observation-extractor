@@ -33,7 +33,7 @@ func TestSpec(t *testing.T) {
 					HealthCheckInterval:     30 * time.Second,
 					HealthCriticalTimeout:   90 * time.Second,
 					KafkaConfig: config.KafkaConfig{
-						BindAddr:                 []string{"localhost:9092"},
+						Brokers:                  []string{"localhost:9092"},
 						Version:                  "1.0.2",
 						OffsetOldest:             true,
 						SecProtocol:              "",
@@ -76,7 +76,7 @@ func TestString(t *testing.T) {
 			cfgStr := cfg.String()
 
 			Convey("Then the string format of config should not contain any sensitive configurations", func() {
-				So(cfgStr, ShouldNotContainSubstring, "BindAddr:[localhost:9092]") // KafkaConfig.BindAddr
+				So(cfgStr, ShouldNotContainSubstring, "Brokers")
 				So(cfgStr, ShouldNotContainSubstring, "SecClientKey")
 				So(cfgStr, ShouldNotContainSubstring, "VaultToken")
 				So(cfgStr, ShouldNotContainSubstring, "ServiceAuthToken")

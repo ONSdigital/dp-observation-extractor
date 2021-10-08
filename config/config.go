@@ -29,7 +29,7 @@ type Config struct {
 
 // KafkaConfig contains the config required to connect to Kafka
 type KafkaConfig struct {
-	BindAddr                 []string `envconfig:"KAFKA_ADDR"                         json:"-"`
+	Brokers                  []string `envconfig:"KAFKA_ADDR"                         json:"-"`
 	Version                  string   `envconfig:"KAFKA_VERSION"`
 	OffsetOldest             bool     `envconfig:"KAFKA_OFFSET_OLDEST"`
 	SecProtocol              string   `envconfig:"KAFKA_SEC_PROTO"`
@@ -53,7 +53,7 @@ func getDefaultConfig() *Config {
 		HealthCheckInterval:     30 * time.Second,
 		HealthCriticalTimeout:   90 * time.Second,
 		KafkaConfig: KafkaConfig{
-			BindAddr:                 []string{"localhost:9092"},
+			Brokers:                  []string{"localhost:9092"},
 			Version:                  "1.0.2",
 			OffsetOldest:             true,
 			SecProtocol:              "",
