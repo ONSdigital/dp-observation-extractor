@@ -1,10 +1,9 @@
-dp-observation-extractor
-================
+# dp-observation-extractor
 
 * Consumes a Kafka message specifying a CSV file hosted on AWS S3
 * Retrieves the file and produces a Kafka message for each row in the CSV
 
-### Getting started
+## Getting started
 
 You may want vault to run this service:
 
@@ -14,15 +13,15 @@ You may want vault to run this service:
 * Clone the repo `go get github.com/ONSdigital/dp-csv-splitter`
 * Run the application `make debug`
 
-#### Running in isolation
+### Running in isolation
 * run kafka consumer / producer apps
 * run local S3 store?
 
-### Kafka scripts
+## Kafka scripts
 
 Scripts for updating and debugging Kafka can be found [here](https://github.com/ONSdigital/dp-data-tools)(dp-data-tools)
 
-### Configuration
+## Configuration
 
 | Environment variable         | Default                             | Description
 | ---------------------------- | ----------------------------------- | ----------------------------------------------------
@@ -44,12 +43,12 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | HEALTHCHECK_INTERVAL         | 30s                                 | The period of time between health checks
 | HEALTHCHECK_CRITICAL_TIMEOUT | 90s                                 | The period of time after which failing checks will result in critical global check status
 
-### Contributing
+## Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for details.
 
-### License
+## License
 
-Copyright © 2016-2017, Office for National Statistics (https://www.ons.gov.uk)
+Copyright © 2016-2021, Office for National Statistics (https://www.ons.gov.uk)
 
 Released under MIT license, see [LICENSE](LICENSE.md) for details.
