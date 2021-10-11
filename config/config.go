@@ -77,10 +77,10 @@ func Get() (*Config, error) {
 	cfg := getDefaultConfig()
 
 	if err := envconfig.Process("", cfg); err != nil {
-		return cfg, err
+		return nil, err
 	}
 
-	if errs := cfg.KafkaConfig.validateKafkaValues(); len(errs) != 0 {
+	if errs := cfg.KafkaConfig.validate(); len(errs) != 0 {
 		return nil, fmt.Errorf("kafka config validation errors: %v", strings.Join(errs, ", "))
 	}
 

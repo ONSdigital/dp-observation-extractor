@@ -32,7 +32,7 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | GRACEFUL_SHUTDOWN_TIMEOUT    | "5s"                                | The shutdown timeout in seconds
 | HEALTHCHECK_INTERVAL         | 30s                                 | The period of time between health checks
 | HEALTHCHECK_CRITICAL_TIMEOUT | 90s                                 | The period of time after which failing checks will result in critical global 
-| KAFKA_ADDR                   | "http://localhost:9092"             | The address of the Kafka instance
+| KAFKA_ADDR                   | "localhost:9092"                    | The addresses of the Kafka brokers (comma-separated)
 | KAFKA_VERSION                | "1.0.2"                             | The kafka version that this service expects to connect to
 | KAFKA_OFFSET_OLDEST          | true                                | set kafka offset to be oldest if `true`
 | KAFKA_SEC_PROTO              | _unset_                             | if set to `TLS`, kafka connections will use TLS [[1]](#notes_1)

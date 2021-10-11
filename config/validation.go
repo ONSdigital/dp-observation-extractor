@@ -1,6 +1,6 @@
 package config
 
-func (kafkaConfig KafkaConfig) validateKafkaValues() []string {
+func (kafkaConfig KafkaConfig) validate() []string {
 	errs := []string{}
 
 	if len(kafkaConfig.Brokers) == 0 {

@@ -11,7 +11,7 @@ func TestValidateKafkaValues(t *testing.T) {
 		cfg := getDefaultConfig()
 
 		Convey("When validateKafkaValues is called", func() {
-			errs := cfg.KafkaConfig.validateKafkaValues()
+			errs := cfg.KafkaConfig.validate()
 
 			Convey("Then no error messages should be returned", func() {
 				So(errs, ShouldBeEmpty)
@@ -24,7 +24,7 @@ func TestValidateKafkaValues(t *testing.T) {
 		cfg.KafkaConfig.Brokers = []string{}
 
 		Convey("When validateKafkaValues is called", func() {
-			errs := cfg.KafkaConfig.validateKafkaValues()
+			errs := cfg.KafkaConfig.validate()
 
 			Convey("Then an error message should be returned", func() {
 				So(errs, ShouldNotBeEmpty)
@@ -38,7 +38,7 @@ func TestValidateKafkaValues(t *testing.T) {
 		cfg.KafkaConfig.Version = ""
 
 		Convey("When validateKafkaValues is called", func() {
-			errs := cfg.KafkaConfig.validateKafkaValues()
+			errs := cfg.KafkaConfig.validate()
 
 			Convey("Then an error message should be returned", func() {
 				So(errs, ShouldNotBeEmpty)
@@ -52,7 +52,7 @@ func TestValidateKafkaValues(t *testing.T) {
 		cfg.KafkaConfig.SecProtocol = "invalid"
 
 		Convey("When validateKafkaValues is called", func() {
-			errs := cfg.KafkaConfig.validateKafkaValues()
+			errs := cfg.KafkaConfig.validate()
 
 			Convey("Then an error message should be returned", func() {
 				So(errs, ShouldNotBeEmpty)
@@ -63,13 +63,12 @@ func TestValidateKafkaValues(t *testing.T) {
 
 	Convey("Given an empty KAFKA_SEC_CLIENT_CERT", t, func() {
 		cfg := getDefaultConfig()
-		cfg.KafkaConfig.SecClientCert = ""
 
 		Convey("And KAFKA_SEC_CLIENT_KEY has been set", func() {
 			cfg.KafkaConfig.SecClientKey = "test key"
 
 			Convey("When validateKafkaValues is called", func() {
-				errs := cfg.KafkaConfig.validateKafkaValues()
+				errs := cfg.KafkaConfig.validate()
 
 				Convey("Then an error message should be returned", func() {
 					So(errs, ShouldNotBeEmpty)
@@ -87,7 +86,7 @@ func TestValidateKafkaValues(t *testing.T) {
 			cfg.KafkaConfig.SecClientCert = "test cert"
 
 			Convey("When validateKafkaValues is called", func() {
-				errs := cfg.KafkaConfig.validateKafkaValues()
+				errs := cfg.KafkaConfig.validate()
 
 				Convey("Then an error message should be returned", func() {
 					So(errs, ShouldNotBeEmpty)
@@ -103,7 +102,7 @@ func TestValidateKafkaValues(t *testing.T) {
 		cfg.KafkaConfig.SecProtocol = "invalid"
 
 		Convey("When validateKafkaValues is called", func() {
-			errs := cfg.KafkaConfig.validateKafkaValues()
+			errs := cfg.KafkaConfig.validate()
 
 			Convey("Then an error message should be returned", func() {
 				So(errs, ShouldNotBeEmpty)
