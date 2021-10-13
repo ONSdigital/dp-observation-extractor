@@ -5,7 +5,7 @@ import (
 
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 // MessageWriter writes observations as messages
@@ -40,7 +40,7 @@ func (messageWriter MessageWriter) WriteAll(ctx context.Context, reader Reader, 
 
 		bytes, err := schema.ObservationExtractedEvent.Marshal(extractedEvent)
 		if err != nil {
-			log.Event(ctx, "", log.ERROR, log.Error(err), log.Data{
+			log.Error(ctx, "", err, log.Data{
 				"schema": "failed to marshal observation extracted event",
 				"event":  extractedEvent})
 		}
@@ -50,7 +50,7 @@ func (messageWriter MessageWriter) WriteAll(ctx context.Context, reader Reader, 
 		observation, readErr = reader.Read()
 	}
 
-	log.Event(ctx, "all observations extracted", log.INFO, log.Data{"instanceID": instanceID})
+	log.Info(ctx, "all observations extracted", log.Data{"instanceID": instanceID})
 }
 
 // Marshal converts the given observationExtractedEvent to a []byte.

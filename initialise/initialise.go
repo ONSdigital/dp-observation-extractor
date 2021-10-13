@@ -9,7 +9,7 @@ import (
 	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/event"
 	s3client "github.com/ONSdigital/dp-s3"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
@@ -43,24 +43,32 @@ func (k KafkaProducerName) String() string {
 }
 
 // GetConsumer returns a kafka consumer, which might not be initialised
-func (e *ExternalServiceList) GetConsumer(ctx context.Context, cfg *config.Config) (kafkaConsumer *kafka.ConsumerGroup, err error) {
+func (e *ExternalServiceList) GetConsumer(ctx context.Context, kafkaConfig *config.KafkaConfig) (kafkaConsumer *kafka.ConsumerGroup, err error) {
 
 	kafkaOffset := kafka.OffsetNewest
 
-	if cfg.KafkaOffsetOldest {
+	if kafkaConfig.OffsetOldest {
 		kafkaOffset = kafka.OffsetOldest
 	}
 
 	cgConfig := &kafka.ConsumerGroupConfig{
 		Offset:       &kafkaOffset,
-		KafkaVersion: &cfg.KafkaVersion,
+		KafkaVersion: &kafkaConfig.Version,
+	}
+	if kafkaConfig.SecProtocol == config.KafkaTLSProtocolFlag {
+		cgConfig.SecurityConfig = kafka.GetSecurityConfig(
+			kafkaConfig.SecCACerts,
+			kafkaConfig.SecClientCert,
+			kafkaConfig.SecClientKey,
+			kafkaConfig.SecSkipVerify,
+		)
 	}
 
 	kafkaConsumer, err = kafka.NewConsumerGroup(
 		ctx,
-		cfg.KafkaAddr,
-		cfg.FileConsumerTopic,
-		cfg.FileConsumerGroup,
+		kafkaConfig.Brokers,
+		kafkaConfig.FileConsumerTopic,
+		kafkaConfig.FileConsumerGroup,
 		kafka.CreateConsumerGroupChannels(1),
 		cgConfig,
 	)
@@ -74,16 +82,24 @@ func (e *ExternalServiceList) GetConsumer(ctx context.Context, cfg *config.Confi
 }
 
 // GetProducer returns a kafka producer, which might not be initialised
-func (e *ExternalServiceList) GetProducer(ctx context.Context, topic string, name KafkaProducerName, cfg *config.Config) (kafkaProducer *kafka.Producer, err error) {
-	pConfig := &kafka.ProducerConfig{
-		KafkaVersion: &cfg.KafkaVersion,
-	}
-
+func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaConfig *config.KafkaConfig, topic string, name KafkaProducerName) (kafkaProducer *kafka.Producer, err error) {
 	pChannels := kafka.CreateProducerChannels()
 
-	producer, err := kafka.NewProducer(ctx, cfg.KafkaAddr, topic, pChannels, pConfig)
+	pConfig := &kafka.ProducerConfig{
+		KafkaVersion: &kafkaConfig.Version,
+	}
+	if kafkaConfig.SecProtocol == config.KafkaTLSProtocolFlag {
+		pConfig.SecurityConfig = kafka.GetSecurityConfig(
+			kafkaConfig.SecCACerts,
+			kafkaConfig.SecClientCert,
+			kafkaConfig.SecClientKey,
+			kafkaConfig.SecSkipVerify,
+		)
+	}
+
+	producer, err := kafka.NewProducer(ctx, kafkaConfig.Brokers, topic, pChannels, pConfig)
 	if err != nil {
-		log.Event(ctx, "new kafka producer returned an error", log.FATAL, log.Error(err), log.Data{"topic": topic})
+		log.Fatal(ctx, "new kafka producer returned an error", err, log.Data{"topic": topic})
 		return nil, err
 	}
 
@@ -122,7 +138,7 @@ func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *sess
 func (e *ExternalServiceList) GetHealthChecker(ctx context.Context, buildTime, gitCommit, version string, cfg *config.Config) (*healthcheck.HealthCheck, error) {
 	versionInfo, err := healthcheck.NewVersionInfo(buildTime, gitCommit, version)
 	if err != nil {
-		log.Event(ctx, "failed to create versionInfo for healthcheck", log.FATAL, log.Error(err))
+		log.Fatal(ctx, "failed to create versionInfo for healthcheck", err)
 		return nil, err
 	}
 	hc := healthcheck.New(versionInfo, cfg.HealthCriticalTimeout, cfg.HealthCheckInterval)

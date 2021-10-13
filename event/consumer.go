@@ -7,7 +7,7 @@ import (
 	kafka "github.com/ONSdigital/dp-kafka/v2"
 	"github.com/ONSdigital/dp-observation-extractor/schema"
 	"github.com/ONSdigital/dp-reporter-client/reporter"
-	"github.com/ONSdigital/log.go/log"
+	"github.com/ONSdigital/log.go/v2/log"
 )
 
 // Handler represents a handler for processing a single event.
@@ -45,31 +45,31 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 				// Unmarshal message
 				event, err := Unmarshal(message)
 				if err != nil {
-					log.Event(msgCtx, "message unmarshal error", log.ERROR, log.Error(err))
+					log.Error(msgCtx, "message unmarshal error", err)
 					message.CommitAndRelease()
 					continue
 				}
 
 				logData := log.Data{"event": event}
-				log.Event(msgCtx, "event received", log.INFO, logData)
+				log.Info(msgCtx, "event received", logData)
 
 				// Handle the message
 				if err = handler.Handle(ctx, event); err != nil {
-					log.Event(msgCtx, "failed to handle event", log.ERROR, log.Error(err), logData)
+					log.Error(msgCtx, "failed to handle event", err, logData)
 					if err = errorReporter.Notify(event.InstanceID, "failed to handle event", err); err != nil {
-						log.Event(msgCtx, "errorReporter.Notify returned an unexpected error", log.ERROR, log.Error(err), logData)
+						log.Error(msgCtx, "errorReporter.Notify returned an unexpected error", err, logData)
 					}
 					message.CommitAndRelease()
 					continue
 				}
 
 				// On success, commit and release the message
-				log.Event(msgCtx, "event processed - committing message", log.INFO, logData)
+				log.Info(msgCtx, "event processed - committing message", logData)
 				message.CommitAndRelease()
-				log.Event(msgCtx, "message committed and kafka consumer released", log.INFO, logData)
+				log.Info(msgCtx, "message committed and kafka consumer released", logData)
 
 			case <-consumer.Closing:
-				log.Event(ctx, "closing event consumer loop", log.INFO)
+				log.Info(ctx, "closing event consumer loop")
 				return
 			}
 		}
@@ -88,10 +88,10 @@ func (consumer *Consumer) Close(ctx context.Context) (err error) {
 
 	select {
 	case <-consumer.Closed:
-		log.Event(ctx, "successfully closed event consumer", log.INFO)
+		log.Info(ctx, "successfully closed event consumer")
 		return nil
 	case <-ctx.Done():
-		log.Event(ctx, "shutdown context time exceeded, skipping graceful shutdown of event consumer", log.INFO)
+		log.Info(ctx, "shutdown context time exceeded, skipping graceful shutdown of event consumer")
 		return errors.New("shutdown context timed out")
 	}
 }
