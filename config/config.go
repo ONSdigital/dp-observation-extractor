@@ -53,7 +53,7 @@ func getDefaultConfig() *Config {
 		HealthCheckInterval:     30 * time.Second,
 		HealthCriticalTimeout:   90 * time.Second,
 		KafkaConfig: KafkaConfig{
-			Brokers:                  []string{"localhost:9092"},
+			Brokers:                  []string{"localhost:9092", "localhost:9093", "localhost:9094"},
 			Version:                  "1.0.2",
 			OffsetOldest:             true,
 			SecProtocol:              "",
