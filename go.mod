@@ -3,8 +3,8 @@ module github.com/ONSdigital/dp-observation-extractor
 go 1.17
 
 require (
-	github.com/ONSdigital/dp-healthcheck v1.1.3
-	github.com/ONSdigital/dp-kafka/v2 v2.4.3
+	github.com/ONSdigital/dp-healthcheck v1.2.3
+	github.com/ONSdigital/dp-kafka/v2 v2.4.4
 	github.com/ONSdigital/dp-reporter-client v1.1.0
 	github.com/ONSdigital/dp-s3 v1.6.0
 	github.com/ONSdigital/dp-vault v1.2.0
@@ -24,21 +24,21 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
-	github.com/smartystreets/goconvey v1.6.4
-	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
-	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	github.com/smartystreets/goconvey v1.7.2
+	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 )
 
 require (
 	github.com/ONSdigital/s3crypto v0.0.0-20180725145621-f8943119a487 // indirect
-	github.com/Shopify/sarama v1.29.1 // indirect
+	github.com/Shopify/sarama v1.30.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
-	github.com/fatih/color v1.12.0 // indirect
+	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-avro/avro v0.0.0-20171219232920-444163702c11 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.2 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
@@ -54,13 +54,13 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/justinas/alice v1.2.0 // indirect
-	github.com/klauspost/compress v1.13.1 // indirect
-	github.com/mattn/go-colorable v0.1.8 // indirect
-	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/klauspost/compress v1.13.6 // indirect
+	github.com/mattn/go-colorable v0.1.9 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63 // indirect
+	golang.org/x/text v0.3.7 // indirect
 )
