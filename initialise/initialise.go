@@ -35,8 +35,6 @@ const (
 
 var kafkaProducerNames = []string{"Observation", "ErrorReporter"}
 
-var cfg *config.Config
-
 // Values of the kafka producers names
 func (k KafkaProducerName) String() string {
 	return kafkaProducerNames[k]
@@ -109,7 +107,7 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaConfig *conf
 	case name == ErrorReporter:
 		e.ErrorReporterProducer = true
 	default:
-		err = fmt.Errorf("kafka producer name not recognised: '%s'. valid names: %v", name.String(), kafkaProducerNames)
+		return nil, fmt.Errorf("kafka producer name not recognised: '%s'. valid names: %v", name.String(), kafkaProducerNames)
 	}
 
 	return producer, nil
