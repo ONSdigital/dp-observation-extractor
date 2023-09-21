@@ -11,6 +11,7 @@ import (
 	s3client "github.com/ONSdigital/dp-s3"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 )
 
@@ -116,8 +117,18 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaConfig *conf
 // GetS3Clients returns a map of AWS S3 clients corresponding to the list of BucketNames
 // and the AWS region provided in the configuration. If encryption is enabled, the s3clients will be cryptoclients.
 func (e *ExternalServiceList) GetS3Clients(cfg *config.Config) (awsSession *session.Session, s3Clients map[string]event.S3Client, err error) {
+	config := &aws.Config{
+		Region: aws.String(cfg.AWSRegion),
+	}
+
+	if cfg.LocalstackHost != "" {
+		config.Endpoint = aws.String(cfg.LocalstackHost)
+		config.S3ForcePathStyle = aws.Bool(true)
+		config.Credentials = credentials.NewStaticCredentials("test", "test", "")
+	}
+
 	// establish AWS session
-	awsSession, err = session.NewSession(&aws.Config{Region: &cfg.AWSRegion})
+	awsSession, err = session.NewSession(config)
 	if err != nil {
 		return
 	}

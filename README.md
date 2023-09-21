@@ -40,6 +40,7 @@ Scripts for updating and debugging Kafka can be found [here](https://github.com/
 | KAFKA_SEC_CLIENT_KEY         | _unset_                             | PEM for the client key [[1]](#notes_1)
 | KAFKA_SEC_CLIENT_CERT        | _unset_                             | PEM for the client certificate [[1]](#notes_1)
 | KAFKA_SEC_SKIP_VERIFY        | false                               | ignores server certificate issues if `true` [[1]](#notes_1)
+| LOCALSTACK_HOST              | ""                                  | Localstack to connect to for local S3 functionality
 | ERROR_PRODUCER_TOPIC         | "report-events"                     | The Kafka topic to send report event errors to
 | FILE_CONSUMER_GROUP          | "dimensions-inserted"               | The Kafka consumer group to consume file messages from
 | FILE_CONSUMER_TOPIC          | "dimensions-inserted"               | The Kafka topic to consume file messages from
