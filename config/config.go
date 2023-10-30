@@ -17,6 +17,7 @@ type Config struct {
 	BindAddr                string        `envconfig:"BIND_ADDR"`
 	AWSRegion               string        `envconfig:"AWS_REGION"`
 	BucketNames             []string      `envconfig:"BUCKET_NAMES"                   json:"-"`
+	LocalstackHost          string        `envconfig:"LOCALSTACK_HOST"`
 	EncryptionDisabled      bool          `envconfig:"ENCRYPTION_DISABLED"`
 	GracefulShutdownTimeout time.Duration `envconfig:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 	HealthCheckInterval     time.Duration `envconfig:"HEALTHCHECK_INTERVAL"`
