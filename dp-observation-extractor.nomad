@@ -3,13 +3,7 @@ job "dp-observation-extractor" {
   region      = "eu"
   type        = "service"
 
-  // Make sure that this API is only run on the publishing nodes
-  constraint {
-    attribute = "${node.class}"
-    value     = "publishing"
-  }
-
- update {
+  update {
     stagger          = "60s"
     min_healthy_time = "30s"
     healthy_deadline = "2m"
@@ -19,6 +13,22 @@ job "dp-observation-extractor" {
 
   group "publishing" {
     count = "{{PUBLISHING_TASK_COUNT}}"
+
+    spread {
+      attribute = "${node.unique.id}"
+      weight    = 100
+      # with `target` omitted, Nomad will spread allocations evenly across all values of the attribute.
+    }
+    spread {
+      attribute = "${attr.platform.aws.placement.availability-zone}"
+      weight    = 100
+      # with `target` omitted, Nomad will spread allocations evenly across all values of the attribute.
+    }
+    
+    constraint {
+      attribute = "${node.class}"
+      value     = "publishing"
+    }
 
     restart {
       attempts = 3
