@@ -74,7 +74,7 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 	s3, ok := handler.s3Clients[s3Url.BucketName]
 	if !ok {
 		log.Warn(ctx, "retreiving data from unexpected s3 bucket", log.Data{"RequestedBucket": s3Url.BucketName})
-		s3 = s3client.NewClientWithSession(s3Url.BucketName, handler.vaultClient != nil, handler.AwsSession)
+		s3 = s3client.NewClientWithSession(s3Url.BucketName, handler.AwsSession)
 	}
 
 	var file io.ReadCloser
