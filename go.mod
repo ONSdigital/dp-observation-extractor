@@ -1,6 +1,6 @@
 module github.com/ONSdigital/dp-observation-extractor
 
-go 1.23.2
+go 1.23
 
 // to avoid 'sonatype-2020-1055' non-CVE vulnerability introduced by github.com/go-ldap/ldap/v3@v3.1.10
 replace github.com/go-ldap/ldap/v3 v3.1.10 => github.com/go-ldap/ldap/v3 v3.4.3
