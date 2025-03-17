@@ -8,9 +8,9 @@ import (
 
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
-	s3client "github.com/ONSdigital/dp-s3"
+	s3client "github.com/ONSdigital/dp-s3/v3"
 	"github.com/ONSdigital/log.go/v2/log"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
 //go:generate moq -out mocks/s3client.go -pkg mock . S3Client
@@ -18,7 +18,7 @@ import (
 
 // CSVHandler handles events to extract observations from CSV files.
 type CSVHandler struct {
-	AwsSession        *session.Session
+	AwsConfig         *aws.Config
 	s3Clients         map[string]S3Client
 	vaultClient       VaultClient
 	vaultPath         string
@@ -26,9 +26,9 @@ type CSVHandler struct {
 }
 
 // NewCSVHandler returns a new CSVHandler instance that uses the given file.FileGetter and Output producer.
-func NewCSVHandler(awsSession *session.Session, s3Clients map[string]S3Client, vaultClient VaultClient, observationWriter ObservationWriter, vaultPath string) *CSVHandler {
+func NewCSVHandler(awsConfig *aws.Config, s3Clients map[string]S3Client, vaultClient VaultClient, observationWriter ObservationWriter, vaultPath string) *CSVHandler {
 	return &CSVHandler{
-		AwsSession:        awsSession,
+		AwsConfig:         awsConfig,
 		s3Clients:         s3Clients,
 		vaultClient:       vaultClient,
 		vaultPath:         vaultPath,
@@ -38,8 +38,8 @@ func NewCSVHandler(awsSession *session.Session, s3Clients map[string]S3Client, v
 
 // S3Client represents the S3 client from dp-s3 with the required methods
 type S3Client interface {
-	Get(key string) (io.ReadCloser, *int64, error)
-	GetWithPSK(key string, psk []byte) (io.ReadCloser, *int64, error)
+	Get(ctx context.Context, key string) (io.ReadCloser, *int64, error)
+	GetWithPSK(ctx context.Context, key string, psk []byte) (io.ReadCloser, *int64, error)
 	Checker(ctx context.Context, state *healthcheck.CheckState) error
 }
 
@@ -74,7 +74,7 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 	s3, ok := handler.s3Clients[s3Url.BucketName]
 	if !ok {
 		log.Warn(ctx, "retreiving data from unexpected s3 bucket", log.Data{"RequestedBucket": s3Url.BucketName})
-		s3 = s3client.NewClientWithSession(s3Url.BucketName, handler.AwsSession)
+		s3 = s3client.NewClientWithConfig(s3Url.BucketName, *handler.AwsConfig)
 	}
 
 	var file io.ReadCloser
@@ -98,14 +98,14 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 
 		log.Info(ctx, "attempting to get S3 object with psk", logData)
 
-		file, contentLength, err = s3.GetWithPSK(s3Url.Key, psk)
+		file, contentLength, err = s3.GetWithPSK(ctx, s3Url.Key, psk)
 		if err != nil {
 			log.Error(ctx, "encountered error retrieving and decrypting csv file", err, logData)
 			return err
 		}
 	} else {
 		log.Info(ctx, "attempting to get S3 object", logData)
-		file, contentLength, err = s3.Get(s3Url.Key)
+		file, contentLength, err = s3.Get(ctx, s3Url.Key)
 		if err != nil {
 			log.Error(ctx, "unable to retrieve s3 output object", err, logData)
 			return err

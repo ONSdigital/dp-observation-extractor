@@ -11,46 +11,40 @@ import (
 	"sync"
 )
 
-var (
-	lockS3ClientMockChecker    sync.RWMutex
-	lockS3ClientMockGet        sync.RWMutex
-	lockS3ClientMockGetWithPSK sync.RWMutex
-)
-
 // Ensure, that S3ClientMock does implement event.S3Client.
 // If this is not the case, regenerate this file with moq.
 var _ event.S3Client = &S3ClientMock{}
 
 // S3ClientMock is a mock implementation of event.S3Client.
 //
-//     func TestSomethingThatUsesS3Client(t *testing.T) {
+//	func TestSomethingThatUsesS3Client(t *testing.T) {
 //
-//         // make and configure a mocked event.S3Client
-//         mockedS3Client := &S3ClientMock{
-//             CheckerFunc: func(ctx context.Context, state *healthcheck.CheckState) error {
-// 	               panic("mock out the Checker method")
-//             },
-//             GetFunc: func(key string) (io.ReadCloser, *int64, error) {
-// 	               panic("mock out the Get method")
-//             },
-//             GetWithPSKFunc: func(key string, psk []byte) (io.ReadCloser, *int64, error) {
-// 	               panic("mock out the GetWithPSK method")
-//             },
-//         }
+//		// make and configure a mocked event.S3Client
+//		mockedS3Client := &S3ClientMock{
+//			CheckerFunc: func(ctx context.Context, state *healthcheck.CheckState) error {
+//				panic("mock out the Checker method")
+//			},
+//			GetFunc: func(ctx context.Context, key string) (io.ReadCloser, *int64, error) {
+//				panic("mock out the Get method")
+//			},
+//			GetWithPSKFunc: func(ctx context.Context, key string, psk []byte) (io.ReadCloser, *int64, error) {
+//				panic("mock out the GetWithPSK method")
+//			},
+//		}
 //
-//         // use mockedS3Client in code that requires event.S3Client
-//         // and then make assertions.
+//		// use mockedS3Client in code that requires event.S3Client
+//		// and then make assertions.
 //
-//     }
+//	}
 type S3ClientMock struct {
 	// CheckerFunc mocks the Checker method.
 	CheckerFunc func(ctx context.Context, state *healthcheck.CheckState) error
 
 	// GetFunc mocks the Get method.
-	GetFunc func(key string) (io.ReadCloser, *int64, error)
+	GetFunc func(ctx context.Context, key string) (io.ReadCloser, *int64, error)
 
 	// GetWithPSKFunc mocks the GetWithPSK method.
-	GetWithPSKFunc func(key string, psk []byte) (io.ReadCloser, *int64, error)
+	GetWithPSKFunc func(ctx context.Context, key string, psk []byte) (io.ReadCloser, *int64, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -63,17 +57,24 @@ type S3ClientMock struct {
 		}
 		// Get holds details about calls to the Get method.
 		Get []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Key is the key argument value.
 			Key string
 		}
 		// GetWithPSK holds details about calls to the GetWithPSK method.
 		GetWithPSK []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Key is the key argument value.
 			Key string
 			// Psk is the psk argument value.
 			Psk []byte
 		}
 	}
+	lockChecker    sync.RWMutex
+	lockGet        sync.RWMutex
+	lockGetWithPSK sync.RWMutex
 }
 
 // Checker calls CheckerFunc.
@@ -88,15 +89,16 @@ func (mock *S3ClientMock) Checker(ctx context.Context, state *healthcheck.CheckS
 		Ctx:   ctx,
 		State: state,
 	}
-	lockS3ClientMockChecker.Lock()
+	mock.lockChecker.Lock()
 	mock.calls.Checker = append(mock.calls.Checker, callInfo)
-	lockS3ClientMockChecker.Unlock()
+	mock.lockChecker.Unlock()
 	return mock.CheckerFunc(ctx, state)
 }
 
 // CheckerCalls gets all the calls that were made to Checker.
 // Check the length with:
-//     len(mockedS3Client.CheckerCalls())
+//
+//	len(mockedS3Client.CheckerCalls())
 func (mock *S3ClientMock) CheckerCalls() []struct {
 	Ctx   context.Context
 	State *healthcheck.CheckState
@@ -105,74 +107,84 @@ func (mock *S3ClientMock) CheckerCalls() []struct {
 		Ctx   context.Context
 		State *healthcheck.CheckState
 	}
-	lockS3ClientMockChecker.RLock()
+	mock.lockChecker.RLock()
 	calls = mock.calls.Checker
-	lockS3ClientMockChecker.RUnlock()
+	mock.lockChecker.RUnlock()
 	return calls
 }
 
 // Get calls GetFunc.
-func (mock *S3ClientMock) Get(key string) (io.ReadCloser, *int64, error) {
+func (mock *S3ClientMock) Get(ctx context.Context, key string) (io.ReadCloser, *int64, error) {
 	if mock.GetFunc == nil {
 		panic("S3ClientMock.GetFunc: method is nil but S3Client.Get was just called")
 	}
 	callInfo := struct {
+		Ctx context.Context
 		Key string
 	}{
+		Ctx: ctx,
 		Key: key,
 	}
-	lockS3ClientMockGet.Lock()
+	mock.lockGet.Lock()
 	mock.calls.Get = append(mock.calls.Get, callInfo)
-	lockS3ClientMockGet.Unlock()
-	return mock.GetFunc(key)
+	mock.lockGet.Unlock()
+	return mock.GetFunc(ctx, key)
 }
 
 // GetCalls gets all the calls that were made to Get.
 // Check the length with:
-//     len(mockedS3Client.GetCalls())
+//
+//	len(mockedS3Client.GetCalls())
 func (mock *S3ClientMock) GetCalls() []struct {
+	Ctx context.Context
 	Key string
 } {
 	var calls []struct {
+		Ctx context.Context
 		Key string
 	}
-	lockS3ClientMockGet.RLock()
+	mock.lockGet.RLock()
 	calls = mock.calls.Get
-	lockS3ClientMockGet.RUnlock()
+	mock.lockGet.RUnlock()
 	return calls
 }
 
 // GetWithPSK calls GetWithPSKFunc.
-func (mock *S3ClientMock) GetWithPSK(key string, psk []byte) (io.ReadCloser, *int64, error) {
+func (mock *S3ClientMock) GetWithPSK(ctx context.Context, key string, psk []byte) (io.ReadCloser, *int64, error) {
 	if mock.GetWithPSKFunc == nil {
 		panic("S3ClientMock.GetWithPSKFunc: method is nil but S3Client.GetWithPSK was just called")
 	}
 	callInfo := struct {
+		Ctx context.Context
 		Key string
 		Psk []byte
 	}{
+		Ctx: ctx,
 		Key: key,
 		Psk: psk,
 	}
-	lockS3ClientMockGetWithPSK.Lock()
+	mock.lockGetWithPSK.Lock()
 	mock.calls.GetWithPSK = append(mock.calls.GetWithPSK, callInfo)
-	lockS3ClientMockGetWithPSK.Unlock()
-	return mock.GetWithPSKFunc(key, psk)
+	mock.lockGetWithPSK.Unlock()
+	return mock.GetWithPSKFunc(ctx, key, psk)
 }
 
 // GetWithPSKCalls gets all the calls that were made to GetWithPSK.
 // Check the length with:
-//     len(mockedS3Client.GetWithPSKCalls())
+//
+//	len(mockedS3Client.GetWithPSKCalls())
 func (mock *S3ClientMock) GetWithPSKCalls() []struct {
+	Ctx context.Context
 	Key string
 	Psk []byte
 } {
 	var calls []struct {
+		Ctx context.Context
 		Key string
 		Psk []byte
 	}
-	lockS3ClientMockGetWithPSK.RLock()
+	mock.lockGetWithPSK.RLock()
 	calls = mock.calls.GetWithPSK
-	lockS3ClientMockGetWithPSK.RUnlock()
+	mock.lockGetWithPSK.RUnlock()
 	return calls
 }

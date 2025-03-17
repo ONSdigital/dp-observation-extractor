@@ -21,8 +21,8 @@ import (
 
 //nolint:gocognit,gocyclo // cognitive and cyclomatic complexity is high, acceptable for now
 func Run(ctx context.Context, config *config.Config, serviceList initialise.ExternalServiceList, signals chan os.Signal, errorChannel chan error, buildTime, gitCommit, version string) error {
-	// S3 Session and clients (mapped by bucket name)
-	sess, s3Clients, err := serviceList.GetS3Clients(config)
+	// S3 Config and clients (mapped by bucket name)
+	awsConfig, s3Clients, err := serviceList.GetS3Clients(ctx, config)
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 
 	httpServer := startHealthCheck(ctx, hc, config.BindAddr, errorChannel)
 
-	eventHandler := event.NewCSVHandler(sess, s3Clients, vaultClient, observationWriter, config.VaultPath)
+	eventHandler := event.NewCSVHandler(awsConfig, s3Clients, vaultClient, observationWriter, config.VaultPath)
 
 	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
 	if err != nil {

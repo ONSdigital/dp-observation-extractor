@@ -1,6 +1,7 @@
 package event_test
 
 import (
+	"context"
 	"errors"
 	"io"
 	"strings"
@@ -32,33 +33,33 @@ var (
 )
 
 // S3 Get function for a successful case
-var funcGetValid = func(key string) (io.ReadCloser, *int64, error) {
+var funcGetValid = func(ctx context.Context, key string) (io.ReadCloser, *int64, error) {
 	return io.NopCloser(strings.NewReader(exampleHeader + "\n" + exampleCsvLine)), &contentLen, nil
 }
 
 // S3 Get function for an error case
-var funcGetErr = func(key string) (io.ReadCloser, *int64, error) {
+var funcGetErr = func(ctx context.Context, key string) (io.ReadCloser, *int64, error) {
 	return nil, nil, io.EOF
 }
 
 // S3 GetWithPsk for a successful case
-var funcGetWithPskValid = func(key string, psk []byte) (io.ReadCloser, *int64, error) {
+var funcGetWithPskValid = func(ctx context.Context, key string, psk []byte) (io.ReadCloser, *int64, error) {
 	return io.NopCloser(strings.NewReader(exampleHeader + "\n" + exampleCsvLine)), &contentLen, nil
 }
 
 // S3 GetWithPsk for an error case
-var funcGetWithPskErr = func(key string, psk []byte) (io.ReadCloser, *int64, error) {
+var funcGetWithPskErr = func(ctx context.Context, key string, psk []byte) (io.ReadCloser, *int64, error) {
 	return nil, nil, errCryptoClient
 }
 
 // createS3MockGet creates an S3Client mock with the provided function and returns it, and the map as expected by Handler
-func createS3MockGet(funcGet func(key string) (io.ReadCloser, *int64, error)) (s3cli *mock.S3ClientMock, s3Clients map[string]event.S3Client) {
+func createS3MockGet(funcGet func(ctx context.Context, key string) (io.ReadCloser, *int64, error)) (s3cli *mock.S3ClientMock, s3Clients map[string]event.S3Client) {
 	s3cli = &mock.S3ClientMock{GetFunc: funcGet}
 	s3Clients = map[string]event.S3Client{bucket: s3cli}
 	return
 }
 
-func createS3MockGetWithPsk(funcGetWithPsk func(key string, psk []byte) (io.ReadCloser, *int64, error)) (s3cli *mock.S3ClientMock, s3Clients map[string]event.S3Client) {
+func createS3MockGetWithPsk(funcGetWithPsk func(ctx context.Context, key string, psk []byte) (io.ReadCloser, *int64, error)) (s3cli *mock.S3ClientMock, s3Clients map[string]event.S3Client) {
 	s3cli = &mock.S3ClientMock{GetWithPSKFunc: funcGetWithPsk}
 	s3Clients = map[string]event.S3Client{bucket: s3cli}
 	return s3cli, s3Clients
