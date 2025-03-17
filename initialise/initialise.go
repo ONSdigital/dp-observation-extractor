@@ -42,8 +42,7 @@ func (k KafkaProducerName) String() string {
 }
 
 // GetConsumer returns a kafka consumer, which might not be initialised
-func (e *ExternalServiceList) GetConsumer(ctx context.Context, kafkaConfig *config.KafkaConfig) (kafkaConsumer *kafka.ConsumerGroup, err error) {
-
+func (e *ExternalServiceList) GetConsumer(ctx context.Context, kafkaConfig *config.KafkaConfig) (*kafka.ConsumerGroup, error) {
 	kafkaOffset := kafka.OffsetNewest
 
 	if kafkaConfig.OffsetOldest {
@@ -63,7 +62,7 @@ func (e *ExternalServiceList) GetConsumer(ctx context.Context, kafkaConfig *conf
 		)
 	}
 
-	kafkaConsumer, err = kafka.NewConsumerGroup(
+	kafkaConsumer, err := kafka.NewConsumerGroup(
 		ctx,
 		kafkaConfig.Brokers,
 		kafkaConfig.FileConsumerTopic,
@@ -72,12 +71,12 @@ func (e *ExternalServiceList) GetConsumer(ctx context.Context, kafkaConfig *conf
 		cgConfig,
 	)
 	if err != nil {
-		return
+		return kafkaConsumer, err
 	}
 
 	e.Consumer = true
 
-	return
+	return kafkaConsumer, nil
 }
 
 // GetProducer returns a kafka producer, which might not be initialised

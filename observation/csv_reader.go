@@ -13,7 +13,6 @@ type CSVReader struct {
 
 // NewCSVReader returns a new CSVReader instance for the given io.CSVReader
 func NewCSVReader(ioreader io.Reader) *CSVReader {
-
 	scanner := bufio.NewScanner(ioreader)
 
 	// Discard the header row.
@@ -29,7 +28,6 @@ func NewCSVReader(ioreader io.Reader) *CSVReader {
 
 // Read will take a line from the input batchReader and convert it into an Observation instance.
 func (reader *CSVReader) Read() (*Observation, error) {
-
 	text, err := reader.readLine()
 	if err != nil {
 		return nil, err
@@ -40,7 +38,7 @@ func (reader *CSVReader) Read() (*Observation, error) {
 		RowIndex: reader.rowIndex,
 	}
 
-	reader.rowIndex = reader.rowIndex + 1
+	reader.rowIndex++
 
 	return observation, nil
 }
@@ -51,7 +49,6 @@ func (reader *CSVReader) readLine() (string, error) {
 	scanSuccessful := scanner.Scan()
 
 	if !scanSuccessful {
-
 		if scanner.Err() != nil {
 			return "", scanner.Err()
 		}

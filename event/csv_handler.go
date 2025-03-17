@@ -80,7 +80,6 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 	var file io.ReadCloser
 	var contentLength *int64
 	if handler.vaultClient != nil {
-
 		vaultPath := handler.vaultPath + "/" + s3Url.Key
 		vaultKey := "key"
 		logData["vault_path"] = vaultPath

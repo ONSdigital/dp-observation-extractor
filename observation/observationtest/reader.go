@@ -1,8 +1,9 @@
 package observationtest
 
 import (
-	"github.com/ONSdigital/dp-observation-extractor/observation"
 	"io"
+
+	"github.com/ONSdigital/dp-observation-extractor/observation"
 )
 
 var _ observation.Reader = (*Reader)(nil)
@@ -15,11 +16,11 @@ type Reader struct {
 }
 
 // NewReader provides a reader that returns the given observations and error on read.
-func NewReader(observations []*observation.Observation, error error) *Reader {
+func NewReader(observations []*observation.Observation, err error) *Reader {
 	return &Reader{
 		observations: observations,
 		offset:       0,
-		error:        error,
+		error:        err,
 	}
 }
 

@@ -31,7 +31,6 @@ func NewConsumer() *Consumer {
 
 // Consume convert them to event instances, and pass the event to the provided handler.
 func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.IConsumerGroup, handler Handler, errorReporter reporter.ErrorReporter) {
-
 	go func() {
 		defer close(consumer.Closed)
 
@@ -73,13 +72,11 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 				return
 			}
 		}
-
 	}()
 }
 
 // Close safely closes the consumer and releases all resources
 func (consumer *Consumer) Close(ctx context.Context) (err error) {
-
 	if ctx == nil {
 		ctx = context.Background()
 	}

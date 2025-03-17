@@ -19,8 +19,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Run(ctx context.Context, config *config.Config, serviceList initialise.ExternalServiceList, signals chan os.Signal, errorChannel chan error, BuildTime string, GitCommit string, Version string) error {
-
+//nolint:gocognit,gocyclo // cognitive and cyclomatic complexity is high, acceptable for now
+func Run(ctx context.Context, config *config.Config, serviceList initialise.ExternalServiceList, signals chan os.Signal, errorChannel chan error, buildTime, gitCommit, version string) error {
 	// S3 Session and clients (mapped by bucket name)
 	sess, s3Clients, err := serviceList.GetS3Clients(config)
 	if err != nil {
@@ -57,12 +57,12 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 	}
 
 	// Create healthcheck object with versionInfo
-	hc, err := serviceList.GetHealthChecker(ctx, BuildTime, GitCommit, Version, config)
+	hc, err := serviceList.GetHealthChecker(ctx, buildTime, gitCommit, version, config)
 	if err != nil {
 		return err
 	}
 
-	registerCheckers(ctx, hc, kafkaConsumer, kafkaObservationProducer, kafkaErrorProducer, vaultClient, s3Clients)
+	err = registerCheckers(ctx, hc, kafkaConsumer, kafkaObservationProducer, kafkaErrorProducer, vaultClient, s3Clients)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,6 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 	eventConsumer.Consume(ctx, kafkaConsumer, eventHandler, errorReporter)
 
 	shutdownGracefully := func() error {
-
 		ctx, cancel := context.WithTimeout(ctx, config.GracefulShutdownTimeout)
 		anyError := false
 
@@ -150,7 +149,7 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 		// if any error happened during shutdown, log it and exit with err code
 		if anyError {
 			log.Warn(ctx, "graceful shutdown had errors")
-			return errors.New("Failed to shutdown gracefully")
+			return errors.New("failed to shutdown gracefully")
 		}
 
 		// if all dependencies shutted down successfully, log it and exit with success code
@@ -163,11 +162,8 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 	kafkaObservationProducer.Channels().LogErrors(ctx, "kafka observation producer error")
 	kafkaErrorProducer.Channels().LogErrors(ctx, "kafka error producer error")
 	go func() {
-		for {
-			select {
-			case err := <-errorChannel:
-				log.Error(ctx, "error channel", err)
-			}
+		for err := range errorChannel {
+			log.Error(ctx, "error channel", err)
 		}
 	}()
 
@@ -204,7 +200,6 @@ func registerCheckers(ctx context.Context, hc *healthcheck.HealthCheck,
 	kafkaErrorProducer *kafka.Producer,
 	vaultClient event.VaultClient,
 	s3Clients map[string]event.S3Client) (err error) {
-
 	hasErrors := false
 
 	if err = hc.AddCheck("Kafka Consumer", kafkaConsumer.Checker); err != nil {

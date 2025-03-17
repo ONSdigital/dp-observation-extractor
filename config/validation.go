@@ -7,7 +7,7 @@ func (kafkaConfig KafkaConfig) validate() []string {
 		errs = append(errs, "no KAFKA_ADDR given")
 	}
 
-	if len(kafkaConfig.Version) == 0 {
+	if kafkaConfig.Version == "" {
 		errs = append(errs, "no KAFKA_VERSION given")
 	}
 
@@ -15,8 +15,8 @@ func (kafkaConfig KafkaConfig) validate() []string {
 		errs = append(errs, "KAFKA_SEC_PROTO has invalid value")
 	}
 
-	isKafkaClientCertSet := len(kafkaConfig.SecClientCert) != 0
-	isKafkaClientKeySet := len(kafkaConfig.SecClientKey) != 0
+	isKafkaClientCertSet := kafkaConfig.SecClientCert != ""
+	isKafkaClientKeySet := kafkaConfig.SecClientKey != ""
 	if isKafkaClientKeySet && !isKafkaClientCertSet {
 		errs = append(errs, "no KAFKA_SEC_CLIENT_CERT given but got KAFKA_SEC_CLIENT_KEY")
 	}

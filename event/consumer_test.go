@@ -19,7 +19,6 @@ var ctx = context.Background()
 
 func TestConsume_UnmarshallError(t *testing.T) {
 	Convey("Given an event consumer with an invalid schema and a valid schema", t, func(c C) {
-
 		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
 		handler := eventtest.NewEventHandler(nil)
@@ -36,7 +35,6 @@ func TestConsume_UnmarshallError(t *testing.T) {
 		}()
 
 		Convey("When consume messages is called", func() {
-
 			consumer := event.NewConsumer()
 			consumer.Consume(ctx, messageConsumer, handler, reporter)
 
@@ -62,7 +60,6 @@ func TestConsume_UnmarshallError(t *testing.T) {
 
 func TestConsumer_HandlerError(t *testing.T) {
 	Convey("Given an event consumer with a valid schema", t, func(c C) {
-
 		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
 
@@ -74,7 +71,6 @@ func TestConsumer_HandlerError(t *testing.T) {
 		messageConsumer.Channels().Upstream <- kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
 
 		Convey("When consume is called", func() {
-
 			consumer := event.NewConsumer()
 			consumer.Consume(ctx, messageConsumer, handler, reporter)
 
@@ -99,9 +95,7 @@ func TestConsumer_HandlerError(t *testing.T) {
 }
 
 func TestConsume(t *testing.T) {
-
 	Convey("Given an event consumer with a valid schema", t, func(c C) {
-
 		reporter := reportertest.NewImportErrorReporterMock(nil)
 		messageConsumer := kafkatest.NewMessageConsumer(true)
 		handler := eventtest.NewEventHandler(nil)
@@ -112,7 +106,6 @@ func TestConsume(t *testing.T) {
 		messageConsumer.Channels().Upstream <- message
 
 		Convey("When consume is called", func() {
-
 			consumer := event.NewConsumer()
 			consumer.Consume(ctx, messageConsumer, handler, reporter)
 
@@ -138,14 +131,11 @@ func TestConsume(t *testing.T) {
 }
 
 func TestToEvent(t *testing.T) {
-
 	Convey("Given a event schema encoded using avro", t, func(c C) {
-
 		expectedEvent := getExampleEvent()
 		message := kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
 
 		Convey("When the expectedEvent is unmarshalled", func() {
-
 			event, err := event.Unmarshal(message)
 
 			Convey("The expectedEvent has the expected values", func() {
@@ -175,7 +165,6 @@ func getExampleEvent() *event.DimensionsInserted {
 // waitEventsAndCloseHandler waits for a number or events to be sent to the handler, and then closes it,
 // blocking until closed channel is closed, in order to prevent race conditions
 func waitEventsAndCloseHandler(ctx context.Context, consumer *event.Consumer, handler *eventtest.EventHandler, nMsg int) {
-
 	// Wait for handler to receive nMsg messages
 	for i := 0; i < nMsg; i++ {
 		<-handler.ChHandle

@@ -27,11 +27,9 @@ func NewMessageWriter(messageProducer MessageProducer) *MessageWriter {
 
 // WriteAll observations as messages from the given observation reader.
 func (messageWriter MessageWriter) WriteAll(ctx context.Context, reader Reader, instanceID string) {
-
 	observation, readErr := reader.Read()
 
 	for readErr == nil {
-
 		extractedEvent := ExtractedEvent{
 			InstanceID: instanceID,
 			Row:        observation.Row,

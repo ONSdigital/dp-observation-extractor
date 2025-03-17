@@ -13,13 +13,14 @@ import (
 
 var ctx = context.Background()
 
+const (
+	expectedInstanceID = "123abc"
+)
+
 func TestMessageWriter_WriteAll(t *testing.T) {
-
 	Convey("Given an observation reader with a single observation", t, func() {
-
 		// Create mock reader with one expected observation.
 		expectedObservation := &observation.Observation{Row: "the,row,content"}
-		expectedInstanceID := "123abc"
 		expectedEvent := observation.ExtractedEvent{Row: expectedObservation.Row, InstanceID: expectedInstanceID}
 
 		expectedObservations := make([]*observation.Observation, 1)
@@ -32,13 +33,11 @@ func TestMessageWriter_WriteAll(t *testing.T) {
 		observationMessageWriter := observation.NewMessageWriter(mockMessageProducer)
 
 		Convey("When write all is called on the observation schema writer", func() {
-
 			go func() {
 				observationMessageWriter.WriteAll(ctx, mockObservationReader, expectedInstanceID)
 			}()
 
 			Convey("The schema producer has the observation on its output channel", func() {
-
 				messageBytes := <-mockMessageProducer.Channels().Output
 				err := mockMessageProducer.Close(ctx)
 				So(err, ShouldBeNil)
@@ -50,20 +49,15 @@ func TestMessageWriter_WriteAll(t *testing.T) {
 }
 
 func TestMessageWriter_Marshal(t *testing.T) {
-
 	Convey("Given an example observation", t, func() {
-
 		expectedObservation := &observation.Observation{Row: "the,row,content"}
-		expectedInstanceID := "123abc"
 		expectedEvent := observation.ExtractedEvent{Row: expectedObservation.Row, InstanceID: expectedInstanceID}
 
 		Convey("When Marshal is called", func() {
-
 			bytes, err := observation.Marshal(expectedEvent)
 			So(err, ShouldBeNil)
 
 			Convey("The observation can be unmarshalled and has the expected values", func() {
-
 				actualEvent := Unmarshal(bytes)
 				So(actualEvent.InstanceID, ShouldEqual, expectedEvent.InstanceID)
 				So(actualEvent.Row, ShouldEqual, expectedEvent.Row)

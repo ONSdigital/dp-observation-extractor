@@ -22,7 +22,6 @@ var (
 )
 
 func main() {
-
 	log.Namespace = "dp-observation-extractor"
 	ctx := context.Background()
 
