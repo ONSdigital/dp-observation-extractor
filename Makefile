@@ -45,6 +45,14 @@ acceptance:
 test:
 	go test -cover -race ./...
 
+.PHONY: lint
+lint:
+	golangci-lint run ./...
+
+.PHONY: test-component
+test-component:
+	exit
+
 .PHONY: vault
 vault:
 	@echo "$(VAULT_POLICY)"

@@ -11,8 +11,5 @@ image_resource:
 inputs:
   - name: dp-observation-extractor
 
-outputs:
-  - name: build
-
 run:
-  path: dp-observation-extractor/ci/scripts/build.sh
+  path: dp-observation-extractor/ci/scripts/lint.sh
