@@ -7,10 +7,12 @@ import (
 	"strconv"
 
 	"github.com/ONSdigital/dp-healthcheck/healthcheck"
+	"github.com/ONSdigital/dp-observation-extractor/config"
 	"github.com/ONSdigital/dp-observation-extractor/observation"
 	s3client "github.com/ONSdigital/dp-s3/v3"
 	"github.com/ONSdigital/log.go/v2/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 //go:generate moq -out mocks/s3client.go -pkg mock . S3Client
@@ -74,7 +76,20 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 	s3, ok := handler.s3Clients[s3Url.BucketName]
 	if !ok {
 		log.Warn(ctx, "retreiving data from unexpected s3 bucket", log.Data{"RequestedBucket": s3Url.BucketName})
-		s3 = s3client.NewClientWithConfig(s3Url.BucketName, *handler.AwsConfig)
+		cfg, err := config.Get()
+		if err != nil {
+			log.Error(ctx, "unable to get config", err, logData)
+			return err
+		}
+
+		if cfg.LocalstackHost != "" {
+			s3 = s3client.NewClientWithConfig(s3Url.BucketName, *handler.AwsConfig, func(o *awsS3.Options) {
+				o.BaseEndpoint = aws.String(cfg.LocalstackHost)
+				o.UsePathStyle = true
+			})
+		} else {
+			s3 = s3client.NewClientWithConfig(s3Url.BucketName, *handler.AwsConfig)
+		}
 	}
 
 	var file io.ReadCloser
