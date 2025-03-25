@@ -88,8 +88,8 @@ github.com/ONSdigital/dp-net/v3 v3.0.0 h1:uQvU+4kX5rH4istsaqJFhPXe8Hcz13pFmKhblU
 github.com/ONSdigital/dp-net/v3 v3.0.0/go.mod h1:ki9Vcn8BuKP/3c2X3KDTFtUFFa5bemfglCbtH1IXZwA=
 github.com/ONSdigital/dp-reporter-client v1.2.0 h1:MoSj211ja1OK5zVKmDhukFFlU0ls1PhTcf20X2cy15E=
 github.com/ONSdigital/dp-reporter-client v1.2.0/go.mod h1:sNeDh9Bma+SfyGwB2j+84I7xU9xK7pJNYLLOWMG0Q98=
-github.com/ONSdigital/dp-s3/v3 v3.1.0 h1:x/+1bK+2gOh53OaMZ1WcLepKtBs20IR5a+D4TUZJEwk=
-github.com/ONSdigital/dp-s3/v3 v3.1.0/go.mod h1:Wga1KP8LO8nirZnwhD9s0W48Cni0KI4i8QFw5sj/1ZI=
+github.com/ONSdigital/dp-s3/v3 v3.2.0 h1:SYQ5Q1W75GsSG0fE7gk7e2WX2XZKgzHfn8SzYysWkGU=
+github.com/ONSdigital/dp-s3/v3 v3.2.0/go.mod h1:wnxrcZ15VD2/izSKZeGJoUug59CrvgFuPD7WKO4jjFs=
 github.com/ONSdigital/dp-vault v1.3.1 h1:fu56wh7FucMO9xAX4hhzlKZU6Foumd14+el7PduZNFw=
 github.com/ONSdigital/dp-vault v1.3.1/go.mod h1:7eRXvFRROZ34oMMTvRZMy/WKUSHLQTj6ocBEqo021KY=
 github.com/ONSdigital/go-ns v0.0.0-20191104121206-f144c4ec2e58/go.mod h1:iWos35il+NjbvDEqwtB736pyHru0MPFE/LqcwkV1wDc=

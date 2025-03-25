@@ -6,7 +6,7 @@ require (
 	github.com/ONSdigital/dp-healthcheck v1.6.3
 	github.com/ONSdigital/dp-kafka/v2 v2.8.0
 	github.com/ONSdigital/dp-reporter-client v1.2.0
-	github.com/ONSdigital/dp-s3/v3 v3.1.0
+	github.com/ONSdigital/dp-s3/v3 v3.2.0
 	github.com/ONSdigital/dp-vault v1.3.1
 	github.com/ONSdigital/go-ns v0.0.0-20241030091535-cc1b11756418
 	github.com/ONSdigital/log.go/v2 v2.4.4
