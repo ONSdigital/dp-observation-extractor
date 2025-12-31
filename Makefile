@@ -26,7 +26,7 @@ all: audit test build
 
 .PHONY: audit
 audit:
-	go list -json -m all | nancy sleuth --exclude-vulnerability-file ./.nancy-ignore
+	dis-vulncheck
 
 .PHONY: build
 build:
