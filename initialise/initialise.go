@@ -102,10 +102,10 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaConfig *conf
 		return nil, err
 	}
 
-	switch {
-	case name == Observation:
+	switch name {
+	case Observation:
 		e.ObservationProducer = true
-	case name == ErrorReporter:
+	case ErrorReporter:
 		e.ErrorReporterProducer = true
 	default:
 		return nil, fmt.Errorf("kafka producer name not recognised: '%s'. valid names: %v", name.String(), kafkaProducerNames)
@@ -118,7 +118,7 @@ func (e *ExternalServiceList) GetProducer(ctx context.Context, kafkaConfig *conf
 // and the AWS region provided in the configuration. If encryption is enabled, the s3clients will be cryptoclients.
 func (e *ExternalServiceList) GetS3Clients(ctx context.Context, cfg *config.Config) (*aws.Config, map[string]event.S3Client, error) {
 	if cfg.LocalstackHost != "" {
-		awsConfig, err := awsConfig.LoadDefaultConfig(ctx,
+		awsCfg, err := awsConfig.LoadDefaultConfig(ctx,
 			awsConfig.WithRegion(cfg.AWSRegion),
 			awsConfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("test", "test", "")),
 		)
@@ -128,18 +128,18 @@ func (e *ExternalServiceList) GetS3Clients(ctx context.Context, cfg *config.Conf
 
 		s3Clients := make(map[string]event.S3Client)
 		for _, bucketName := range cfg.BucketNames {
-			s3Clients[bucketName] = s3client.NewClientWithConfig(bucketName, awsConfig, func(o *s3.Options) {
+			s3Clients[bucketName] = s3client.NewClientWithConfig(bucketName, awsCfg, func(o *s3.Options) {
 				o.BaseEndpoint = aws.String(cfg.LocalstackHost)
 				o.UsePathStyle = true
 			})
 		}
 		e.S3Clients = true
 
-		return &awsConfig, s3Clients, nil
+		return &awsCfg, s3Clients, nil
 	}
 
 	// establish AWS config
-	awsConfig, err := awsConfig.LoadDefaultConfig(ctx, awsConfig.WithRegion(cfg.AWSRegion))
+	awsCfg, err := awsConfig.LoadDefaultConfig(ctx, awsConfig.WithRegion(cfg.AWSRegion))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -147,11 +147,11 @@ func (e *ExternalServiceList) GetS3Clients(ctx context.Context, cfg *config.Conf
 	// create S3 clients for expected bucket names, so that they can be health-checked
 	s3Clients := make(map[string]event.S3Client)
 	for _, bucketName := range cfg.BucketNames {
-		s3Clients[bucketName] = s3client.NewClientWithConfig(bucketName, awsConfig)
+		s3Clients[bucketName] = s3client.NewClientWithConfig(bucketName, awsCfg)
 	}
 	e.S3Clients = true
 
-	return &awsConfig, s3Clients, nil
+	return &awsCfg, s3Clients, nil
 }
 
 // GetHealthChecker creates a new healthcheck object

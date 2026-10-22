@@ -25,8 +25,8 @@ type EventHandler struct {
 }
 
 // Handle captures the given event and stores it for later assertions
-func (handler *EventHandler) Handle(ctx context.Context, event *event.DimensionsInserted) error {
-	handler.Events = append(handler.Events, *event)
-	handler.ChHandle <- event
+func (handler *EventHandler) Handle(ctx context.Context, receivedEvent *event.DimensionsInserted) error {
+	handler.Events = append(handler.Events, *receivedEvent)
+	handler.ChHandle <- receivedEvent
 	return handler.Error
 }

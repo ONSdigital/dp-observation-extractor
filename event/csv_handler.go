@@ -76,10 +76,10 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 	s3, ok := handler.s3Clients[s3Url.BucketName]
 	if !ok {
 		log.Warn(ctx, "retreiving data from unexpected s3 bucket", log.Data{"RequestedBucket": s3Url.BucketName})
-		cfg, err := config.Get()
-		if err != nil {
-			log.Error(ctx, "unable to get config", err, logData)
-			return err
+		cfg, configErr := config.Get()
+		if configErr != nil {
+			log.Error(ctx, "unable to get config", configErr, logData)
+			return configErr
 		}
 
 		if cfg.LocalstackHost != "" {
@@ -100,15 +100,15 @@ func (handler CSVHandler) Handle(ctx context.Context, event *DimensionsInserted)
 		logData["vault_path"] = vaultPath
 
 		log.Info(ctx, "attempting to get psk from vault", logData)
-		pskStr, err := handler.vaultClient.ReadKey(vaultPath, vaultKey)
-		if err != nil {
-			return err
+		pskStr, readKeyErr := handler.vaultClient.ReadKey(vaultPath, vaultKey)
+		if readKeyErr != nil {
+			return readKeyErr
 		}
 
 		log.Info(ctx, "got psk", logData)
-		psk, err := hex.DecodeString(pskStr)
-		if err != nil {
-			return err
+		psk, decodeErr := hex.DecodeString(pskStr)
+		if decodeErr != nil {
+			return decodeErr
 		}
 
 		log.Info(ctx, "attempting to get S3 object with psk", logData)

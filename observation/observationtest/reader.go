@@ -30,7 +30,7 @@ func (reader *Reader) Read() (*observation.Observation, error) {
 		return nil, io.EOF
 	}
 
-	observation := reader.observations[reader.offset]
+	result := reader.observations[reader.offset]
 	reader.offset++
-	return observation, reader.error
+	return result, reader.error
 }

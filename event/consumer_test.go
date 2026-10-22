@@ -46,9 +46,9 @@ func TestConsume_UnmarshallError(t *testing.T) {
 			Convey("Only the valid event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
 
-				event := handler.Events[0]
-				So(event.FileURL, ShouldEqual, expectedEvent.FileURL)
-				So(event.InstanceID, ShouldEqual, expectedEvent.InstanceID)
+				receivedEvent := handler.Events[0]
+				So(receivedEvent.FileURL, ShouldEqual, expectedEvent.FileURL)
+				So(receivedEvent.InstanceID, ShouldEqual, expectedEvent.InstanceID)
 			})
 
 			Convey("And errorHandler is never called", func() {
@@ -79,9 +79,9 @@ func TestConsumer_HandlerError(t *testing.T) {
 			Convey("An event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
 
-				event := handler.Events[0]
-				So(event.FileURL, ShouldEqual, expectedEvent.FileURL)
-				So(event.InstanceID, ShouldEqual, expectedEvent.InstanceID)
+				receivedEvent := handler.Events[0]
+				So(receivedEvent.FileURL, ShouldEqual, expectedEvent.FileURL)
+				So(receivedEvent.InstanceID, ShouldEqual, expectedEvent.InstanceID)
 
 				Convey("Then the returned handler error is passed to the error handler", func() {
 					So(len(reporter.NotifyCalls()), ShouldEqual, 1)
@@ -114,9 +114,9 @@ func TestConsume(t *testing.T) {
 			Convey("A event is sent to the handler ", func() {
 				So(len(handler.Events), ShouldEqual, 1)
 
-				event := handler.Events[0]
-				So(event.FileURL, ShouldEqual, expectedEvent.FileURL)
-				So(event.InstanceID, ShouldEqual, expectedEvent.InstanceID)
+				receivedEvent := handler.Events[0]
+				So(receivedEvent.FileURL, ShouldEqual, expectedEvent.FileURL)
+				So(receivedEvent.InstanceID, ShouldEqual, expectedEvent.InstanceID)
 			})
 
 			Convey("The message is committed, and consumer group is released", func() {
@@ -136,20 +136,20 @@ func TestToEvent(t *testing.T) {
 		message := kafkatest.NewMessage(marshal(*expectedEvent, c), 0)
 
 		Convey("When the expectedEvent is unmarshalled", func() {
-			event, err := event.Unmarshal(message)
+			receivedEvent, err := event.Unmarshal(message)
 
 			Convey("The expectedEvent has the expected values", func() {
 				So(err, ShouldBeNil)
-				So(event.FileURL, ShouldEqual, expectedEvent.FileURL)
-				So(event.InstanceID, ShouldEqual, expectedEvent.InstanceID)
+				So(receivedEvent.FileURL, ShouldEqual, expectedEvent.FileURL)
+				So(receivedEvent.InstanceID, ShouldEqual, expectedEvent.InstanceID)
 			})
 		})
 	})
 }
 
 // marshal helper method to marshal a event into a []byte
-func marshal(event event.DimensionsInserted, c C) []byte {
-	bytes, err := schema.DimensionsInsertedEvent.Marshal(event)
+func marshal(dimensionsInserted event.DimensionsInserted, c C) []byte {
+	bytes, err := schema.DimensionsInsertedEvent.Marshal(dimensionsInserted)
 	c.So(err, ShouldBeNil)
 	return bytes
 }

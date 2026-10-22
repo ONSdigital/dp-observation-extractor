@@ -20,27 +20,27 @@ import (
 )
 
 //nolint:gocognit,gocyclo // cognitive and cyclomatic complexity is high, acceptable for now
-func Run(ctx context.Context, config *config.Config, serviceList initialise.ExternalServiceList, signals chan os.Signal, errorChannel chan error, buildTime, gitCommit, version string) error {
+func Run(ctx context.Context, cfg *config.Config, serviceList initialise.ExternalServiceList, signals chan os.Signal, errorChannel chan error, buildTime, gitCommit, version string) error {
 	// S3 Config and clients (mapped by bucket name)
-	awsConfig, s3Clients, err := serviceList.GetS3Clients(ctx, config)
+	awsConfig, s3Clients, err := serviceList.GetS3Clients(ctx, cfg)
 	if err != nil {
 		return err
 	}
 
 	// Kafka Consumer
-	kafkaConsumer, err := serviceList.GetConsumer(ctx, &config.KafkaConfig)
+	kafkaConsumer, err := serviceList.GetConsumer(ctx, &cfg.KafkaConfig)
 	if err != nil {
 		return err
 	}
 
 	// Kafka Observation Producer
-	kafkaObservationProducer, err := serviceList.GetProducer(ctx, &config.KafkaConfig, config.KafkaConfig.ObservationProducerTopic, initialise.Observation)
+	kafkaObservationProducer, err := serviceList.GetProducer(ctx, &cfg.KafkaConfig, cfg.KafkaConfig.ObservationProducerTopic, initialise.Observation)
 	if err != nil {
 		return err
 	}
 
 	// Kafka Error Reporter
-	kafkaErrorProducer, err := serviceList.GetProducer(ctx, &config.KafkaConfig, config.KafkaConfig.ErrorProducerTopic, initialise.ErrorReporter)
+	kafkaErrorProducer, err := serviceList.GetProducer(ctx, &cfg.KafkaConfig, cfg.KafkaConfig.ErrorProducerTopic, initialise.ErrorReporter)
 	if err != nil {
 		return err
 	}
@@ -49,15 +49,15 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 
 	// Vault Client
 	var vaultClient event.VaultClient
-	if !config.EncryptionDisabled {
-		vaultClient, err = vault.CreateClient(config.VaultToken, config.VaultAddr, 3)
+	if !cfg.EncryptionDisabled {
+		vaultClient, err = vault.CreateClient(cfg.VaultToken, cfg.VaultAddr, 3)
 		if err != nil {
 			return err
 		}
 	}
 
 	// Create healthcheck object with versionInfo
-	hc, err := serviceList.GetHealthChecker(ctx, buildTime, gitCommit, version, config)
+	hc, err := serviceList.GetHealthChecker(ctx, buildTime, gitCommit, version, cfg)
 	if err != nil {
 		return err
 	}
@@ -67,9 +67,9 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 		return err
 	}
 
-	httpServer := startHealthCheck(ctx, hc, config.BindAddr, errorChannel)
+	httpServer := startHealthCheck(ctx, hc, cfg.BindAddr, errorChannel)
 
-	eventHandler := event.NewCSVHandler(awsConfig, s3Clients, vaultClient, observationWriter, config.VaultPath)
+	eventHandler := event.NewCSVHandler(awsConfig, s3Clients, vaultClient, observationWriter, cfg.VaultPath)
 
 	errorReporter, err := reporter.NewImportErrorReporter(kafkaErrorProducer, log.Namespace)
 	if err != nil {
@@ -80,66 +80,66 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 	eventConsumer.Consume(ctx, kafkaConsumer, eventHandler, errorReporter)
 
 	shutdownGracefully := func() error {
-		ctx, cancel := context.WithTimeout(ctx, config.GracefulShutdownTimeout)
+		shutdownCtx, cancel := context.WithTimeout(ctx, cfg.GracefulShutdownTimeout)
 		anyError := false
 
 		// Stop listening to Kafka consumer
 		if serviceList.Consumer {
-			if err = kafkaConsumer.StopListeningToConsumer(ctx); err != nil {
+			if err = kafkaConsumer.StopListeningToConsumer(shutdownCtx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka consumer listen stop", err, log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
+				log.Error(shutdownCtx, "bad kafka consumer listen stop", err, log.Data{"topic": cfg.KafkaConfig.FileConsumerTopic})
 			} else {
-				log.Info(ctx, "kafka consumer listen stopped", log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
+				log.Info(shutdownCtx, "kafka consumer listen stopped", log.Data{"topic": cfg.KafkaConfig.FileConsumerTopic})
 			}
 		}
 
 		// Stop HTTP server
-		if err = httpServer.Shutdown(ctx); err != nil {
+		if err = httpServer.Shutdown(shutdownCtx); err != nil {
 			anyError = true
-			log.Error(ctx, "bad http server stop", err)
+			log.Error(shutdownCtx, "bad http server stop", err)
 		} else {
-			log.Info(ctx, "http server stopped")
+			log.Info(shutdownCtx, "http server stopped")
 		}
 
 		// Stop healthcheck
 		hc.Stop()
-		log.Info(ctx, "healthcheck stopped")
+		log.Info(shutdownCtx, "healthcheck stopped")
 
 		// Close event consumer
-		if err = eventConsumer.Close(ctx); err != nil {
+		if err = eventConsumer.Close(shutdownCtx); err != nil {
 			anyError = true
-			log.Error(ctx, "bad event consumer stop", err)
+			log.Error(shutdownCtx, "bad event consumer stop", err)
 		} else {
-			log.Info(ctx, "event consumer stopped")
+			log.Info(shutdownCtx, "event consumer stopped")
 		}
 
 		// Close Kafka consumer
 		if serviceList.Consumer {
-			if err = kafkaConsumer.Close(ctx); err != nil {
+			if err = kafkaConsumer.Close(shutdownCtx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka consumer stop", err, log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
+				log.Error(shutdownCtx, "bad kafka consumer stop", err, log.Data{"topic": cfg.KafkaConfig.FileConsumerTopic})
 			} else {
-				log.Info(ctx, "kafka consumer stopped", log.Data{"topic": config.KafkaConfig.FileConsumerTopic})
+				log.Info(shutdownCtx, "kafka consumer stopped", log.Data{"topic": cfg.KafkaConfig.FileConsumerTopic})
 			}
 		}
 
 		// Close Error Reporter Kafka producer
 		if serviceList.ErrorReporterProducer {
-			if err = kafkaErrorProducer.Close(ctx); err != nil {
+			if err = kafkaErrorProducer.Close(shutdownCtx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka error reporter producer stop", err, log.Data{"topic": config.KafkaConfig.ErrorProducerTopic})
+				log.Error(shutdownCtx, "bad kafka error reporter producer stop", err, log.Data{"topic": cfg.KafkaConfig.ErrorProducerTopic})
 			} else {
-				log.Info(ctx, "kafka error report producer stopped", log.Data{"topic": config.KafkaConfig.ErrorProducerTopic})
+				log.Info(shutdownCtx, "kafka error report producer stopped", log.Data{"topic": cfg.KafkaConfig.ErrorProducerTopic})
 			}
 		}
 
 		// Close Observation Kafka producer
 		if serviceList.ObservationProducer {
-			if err = kafkaObservationProducer.Close(ctx); err != nil {
+			if err = kafkaObservationProducer.Close(shutdownCtx); err != nil {
 				anyError = true
-				log.Error(ctx, "bad kafka observation producer stop", err, log.Data{"topic": config.KafkaConfig.ObservationProducerTopic})
+				log.Error(shutdownCtx, "bad kafka observation producer stop", err, log.Data{"topic": cfg.KafkaConfig.ObservationProducerTopic})
 			} else {
-				log.Info(ctx, "kafka observation producer stopped", log.Data{"topic": config.KafkaConfig.ObservationProducerTopic})
+				log.Info(shutdownCtx, "kafka observation producer stopped", log.Data{"topic": cfg.KafkaConfig.ObservationProducerTopic})
 			}
 		}
 
@@ -148,12 +148,12 @@ func Run(ctx context.Context, config *config.Config, serviceList initialise.Exte
 
 		// if any error happened during shutdown, log it and exit with err code
 		if anyError {
-			log.Warn(ctx, "graceful shutdown had errors")
+			log.Warn(shutdownCtx, "graceful shutdown had errors")
 			return errors.New("failed to shutdown gracefully")
 		}
 
 		// if all dependencies shutted down successfully, log it and exit with success code
-		log.Info(ctx, "graceful shutdown was successful")
+		log.Info(shutdownCtx, "graceful shutdown was successful")
 		return nil
 	}
 

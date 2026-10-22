@@ -25,14 +25,14 @@ func main() {
 	log.Namespace = "dp-observation-extractor"
 	ctx := context.Background()
 
-	config, err := config.Get()
+	cfg, err := config.Get()
 	if err != nil {
 		log.Error(ctx, "error getting config", err)
 		os.Exit(1)
 	}
 
 	// sensitive fields are omitted from config.String().
-	log.Info(ctx, "config on startup", log.Data{"config": config})
+	log.Info(ctx, "config on startup", log.Data{"config": cfg})
 
 	// a channel used to signal a graceful exit is required.
 	errorChannel := make(chan error)
@@ -44,7 +44,7 @@ func main() {
 	// serviceList keeps track of what dependency services have been initialised
 	serviceList := initialise.ExternalServiceList{}
 
-	err = service.Run(ctx, config, serviceList, signals, errorChannel, BuildTime, GitCommit, Version)
+	err = service.Run(ctx, cfg, serviceList, signals, errorChannel, BuildTime, GitCommit, Version)
 	if err != nil {
 		log.Error(ctx, "error running service", err)
 		os.Exit(1)

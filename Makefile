@@ -47,7 +47,7 @@ test:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=5m ./...
+	golangci-lint run ./...
 
 .PHONY: test-component
 test-component:

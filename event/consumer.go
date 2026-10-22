@@ -39,7 +39,7 @@ func (consumer *Consumer) Consume(ctx context.Context, messageConsumer kafka.ICo
 			case message := <-messageConsumer.Channels().Upstream:
 
 				// In the future, the context will be obtained from the kafka message
-				msgCtx := context.Background()
+				msgCtx := ctx
 
 				// Unmarshal message
 				event, err := Unmarshal(message)
